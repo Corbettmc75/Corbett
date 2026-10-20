@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Corbett">
+<meta name="theme-color" content="#070C24">
+<link rel="apple-touch-icon" href="photo.jpg">
+<title>Talk with Corbett</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Newsreader:ital,opsz,wght@1,6..72,400;1,6..72,500&display=swap">
+<style>
+/* Full-screen face: the listening clip loops, the talking clip fades in whenever the agent speaks. */
+:root {
+  --sky: #070C24; --ink: #EEF0FA; --muted: #A7AED6; --gold: #E8C98A; --gold-hi: #F7E2B0;
+  --go: #2FB36B; --stop: #E0524B;
+  --f-letter: "Newsreader", Georgia, serif;
+  --f-ui: "Atkinson Hyperlegible", system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--sky); color: var(--ink); font-family: var(--f-ui); overflow: hidden; }
+.stage { position: fixed; inset: 0; background: var(--sky) center / cover no-repeat; }
+.stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity 0.35s ease; }
+#talk { opacity: 0; }
+.stage.speaking #talk { opacity: 1; }
+.shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(7,12,36,0.55), transparent 22%, transparent 55%, rgba(7,12,36,0.85)); }
+header { position: fixed; top: 0; left: 0; right: 0; padding: max(14px, env(safe-area-inset-top)) 18px 0; text-align: center; }
+h1 { margin: 0; font-family: var(--f-letter); font-style: italic; font-weight: 500; font-size: 1.9rem; color: var(--gold-hi); text-shadow: 0 2px 12px rgba(0,0,0,0.6); }
+.note { margin: 4px 0 0; font-size: 0.8rem; color: var(--muted); text-shadow: 0 1px 8px rgba(0,0,0,0.8); }
+footer { position: fixed; left: 0; right: 0; bottom: 0; padding: 0 18px max(26px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; gap: 14px; }
+#caption { min-height: 1.5em; max-width: 560px; margin: 0; text-align: center; font-family: var(--f-letter); font-style: italic; font-size: 1.2rem; line-height: 1.4; text-shadow: 0 2px 10px rgba(0,0,0,0.9); display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+#status { margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--gold); letter-spacing: 0.04em; text-shadow: 0 1px 8px rgba(0,0,0,0.8); }
+#call { width: 84px; height: 84px; border-radius: 50%; border: 0; display: grid; place-items: center; cursor: pointer; color: #fff; background: var(--go); box-shadow: 0 6px 24px rgba(0,0,0,0.5); }
+#call.live { background: var(--stop); }
+#call svg { width: 38px; height: 38px; }
+#call.live svg { transform: rotate(135deg); }
+#call:disabled { opacity: 0.6; }
+#call:focus-visible { outline: 3px solid var(--gold-hi); outline-offset: 4px; }
+</style>
+</head>
+<body>
+<div class="stage" id="stage" style="background-image:url(photo.jpg)">
+  <video id="listen" src="listen.mp4" poster="photo.jpg" muted loop playsinline autoplay preload="auto"></video>
+  <video id="talk" src="talk.mp4" muted loop playsinline preload="auto"></video>
+  <div class="shade"></div>
+</div>
+<header>
+  <h1>Corbett</h1>
+  <p class="note">An AI version of Corbett, made from his own stories and voice</p>
+</header>
+<footer>
+  <p id="caption" aria-live="polite"></p>
+  <p id="status">Tap to call</p>
+  <button id="call" aria-label="Call Corbett"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg></button>
+</footer>
+<script type="module">
+import { Conversation } from "https://cdn.jsdelivr.net/npm/@elevenlabs/client@1.26.0/+esm";
+
+const AGENT_ID = "agent_2601m55j8jt6fq99h55s2134zwq4";
+const $ = (id) => document.getElementById(id);
+const stage = $("stage"), listen = $("listen"), talk = $("talk"), btn = $("call");
+let convo = null;
+
+// A missing clip just falls back to the photo behind it.
+for (const v of [listen, talk]) v.addEventListener("error", () => v.remove());
+
+function setSpeaking(on) {
+  stage.classList.toggle("speaking", on);
+  if (on && talk.isConnected) { talk.currentTime = 0; talk.play().catch(() => {}); }
+}
+function setLive(live) {
+  btn.classList.toggle("live", live);
+  btn.setAttribute("aria-label", live ? "Hang up" : "Call Corbett");
+}
+
+btn.addEventListener("click", async () => {
+  if (convo) { btn.disabled = true; await convo.endSession().catch(() => {}); return; }
+  btn.disabled = true;
+  $("status").textContent = "Connecting…";
+  $("caption").textContent = "";
+  // Start both clips inside the tap so iPhone lets them play.
+  listen.play().catch(() => {}); talk.play().then(() => talk.pause()).catch(() => {});
+  try {
+    convo = await Conversation.startSession({
+      agentId: AGENT_ID,
+      onConnect: () => { setLive(true); btn.disabled = false; $("status").textContent = "Listening…"; },
+      onDisconnect: () => {
+        convo = null; setLive(false); setSpeaking(false); btn.disabled = false;
+        $("status").textContent = "Tap to call";
+      },
+      onModeChange: ({ mode }) => {
+        const speaking = mode === "speaking";
+        setSpeaking(speaking);
+        $("status").textContent = speaking ? "Talking…" : "Listening…";
+      },
+      onMessage: ({ message, source }) => { if (source === "ai" && message) $("caption").textContent = message; },
+      onError: (msg) => { $("status").textContent = "Something went wrong. Tap to try again."; console.error(msg); },
+    });
+  } catch (e) {
+    convo = null; setLive(false); btn.disabled = false;
+    $("status").textContent = /permission|denied|notallowed/i.test(String(e && (e.name || e.message)))
+      ? "Allow the microphone, then tap to call."
+      : "Couldn't connect. Tap to try again.";
+    console.error(e);
+  }
+});
+</script>
+</body>
+</html>
