@@ -88,10 +88,16 @@ btn.addEventListener("click", async () => {
   try {
     convo = await Conversation.startSession({
       agentId: AGENT_ID,
+      connectionType: "websocket",
       onConnect: () => { setLive(true); btn.disabled = false; $("status").textContent = "Listening…"; },
-      onDisconnect: () => {
+      onDisconnect: (d) => {
         convo = null; setLive(false); setSpeaking(false); btn.disabled = false;
         $("status").textContent = "Tap to call";
+        // Show why an unexpected hang-up happened, so it can be fixed.
+        if (d && d.reason !== "user") {
+          const why = [d.reason === "agent" ? "Call ended by the agent" : "Call dropped", d.message, d.closeReason, d.closeCode].filter(Boolean).join(" · ");
+          $("caption").textContent = why;
+        }
       },
       onModeChange: ({ mode }) => {
         const speaking = mode === "speaking";
@@ -99,13 +105,14 @@ btn.addEventListener("click", async () => {
         $("status").textContent = speaking ? "Talking…" : "Listening…";
       },
       onMessage: ({ message, source }) => { if (source === "ai" && message) $("caption").textContent = message; },
-      onError: (msg) => { $("status").textContent = "Something went wrong. Tap to try again."; console.error(msg); },
+      onError: (msg) => { $("status").textContent = "Something went wrong. Tap to try again."; $("caption").textContent = String(msg || ""); console.error(msg); },
     });
   } catch (e) {
     convo = null; setLive(false); btn.disabled = false;
     $("status").textContent = /permission|denied|notallowed/i.test(String(e && (e.name || e.message)))
       ? "Allow the microphone, then tap to call."
       : "Couldn't connect. Tap to try again.";
+    $("caption").textContent = String((e && e.message) || e || "");
     console.error(e);
   }
 });
