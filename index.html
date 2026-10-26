@@ -77,11 +77,11 @@ const AGENT_ID = "agent_2601m55j8jt6fq99h55s2134zwq4";
 const $ = (id) => document.getElementById(id);
 const stage = $("stage"), talk = $("talk"), btn = $("call");
 let convo = null;
-// The mic is muted while Corbett talks, so background noise can't cut him off.
-// The mute button keeps it muted while he listens, too.
+// The mic stays live while Corbett talks, so you can cut in; the mute button
+// silences it when you want quiet.
 let speaking = false, muted = false;
 const muteBtn = $("mute");
-function applyMic() { if (convo) try { convo.setMicMuted(speaking || muted); } catch {} }
+function applyMic() { if (convo) try { convo.setMicMuted(muted); } catch {} }
 function listeningText() { return muted ? "Muted · tap the mic to talk" : "Listening…"; }
 muteBtn.addEventListener("click", () => {
   muted = !muted;
