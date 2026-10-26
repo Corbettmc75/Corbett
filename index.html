@@ -8,13 +8,13 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Corbett">
 <meta name="theme-color" content="#070C24">
-<link rel="apple-touch-icon" href="photo.jpg">
+<link rel="apple-touch-icon" href="icon.jpg">
 <title>Talk with Corbett</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Newsreader:ital,opsz,wght@1,6..72,400;1,6..72,500&display=swap">
 <style>
-/* Full-screen face: the listening clip loops, the talking clip fades in whenever the agent speaks. */
+/* Full-screen face: his still photo while listening; the talking clip fades in whenever the agent speaks. */
 :root {
   --sky: #070C24; --ink: #EEF0FA; --muted: #A7AED6; --gold: #E8C98A; --gold-hi: #F7E2B0;
   --go: #2FB36B; --stop: #E0524B;
@@ -24,8 +24,8 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--sky); color: var(--ink); font-family: var(--f-ui); overflow: hidden; }
-.stage { position: fixed; inset: 0; background: var(--sky) center / cover no-repeat; }
-.stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity 0.35s ease; }
+.stage { position: fixed; inset: 0; background: var(--sky) center top / cover no-repeat; }
+.stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center top; transition: opacity 0.35s ease; }
 #talk { opacity: 0; }
 .stage.speaking #talk { opacity: 1; }
 .shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(7,12,36,0.55), transparent 22%, transparent 55%, rgba(7,12,36,0.85)); }
@@ -43,6 +43,7 @@ footer { position: fixed; left: 0; right: 0; bottom: 0; padding: 0 18px max(26px
 #call:focus-visible, #mute:focus-visible { outline: 3px solid var(--gold-hi); outline-offset: 4px; }
 .controls { display: flex; align-items: center; justify-content: center; gap: 28px; }
 #mute { width: 64px; height: 64px; border-radius: 50%; border: 1px solid rgba(232, 201, 138, 0.5); display: grid; place-items: center; cursor: pointer; color: var(--gold-hi); background: rgba(7, 12, 36, 0.6); box-shadow: 0 6px 24px rgba(0,0,0,0.5); }
+#mute[hidden] { display: none; }
 #mute[aria-pressed="true"] { background: var(--gold); color: #1A1534; }
 #mute svg { width: 28px; height: 28px; }
 #mute .off, #mute[aria-pressed="true"] .on { display: none; }
@@ -51,7 +52,6 @@ footer { position: fixed; left: 0; right: 0; bottom: 0; padding: 0 18px max(26px
 </head>
 <body>
 <div class="stage" id="stage" style="background-image:url(photo.jpg)">
-  <video id="listen" src="listen.mp4" poster="photo.jpg" muted loop playsinline autoplay preload="auto"></video>
   <video id="talk" src="talk.mp4" muted loop playsinline preload="auto"></video>
   <div class="shade"></div>
 </div>
@@ -75,7 +75,7 @@ import { Conversation } from "https://cdn.jsdelivr.net/npm/@elevenlabs/client@1.
 
 const AGENT_ID = "agent_2601m55j8jt6fq99h55s2134zwq4";
 const $ = (id) => document.getElementById(id);
-const stage = $("stage"), listen = $("listen"), talk = $("talk"), btn = $("call");
+const stage = $("stage"), talk = $("talk"), btn = $("call");
 let convo = null;
 // The mic is muted while Corbett talks, so background noise can't cut him off.
 // The mute button keeps it muted while he listens, too.
@@ -91,12 +91,13 @@ muteBtn.addEventListener("click", () => {
   if (!speaking) $("status").textContent = listeningText();
 });
 
+// While listening, his still photo shows; the talking clip fades in when he speaks.
 // A missing clip just falls back to the photo behind it.
-for (const v of [listen, talk]) v.addEventListener("error", () => v.remove());
+talk.addEventListener("error", () => talk.remove());
 
 function setSpeaking(on) {
   stage.classList.toggle("speaking", on);
-  if (on && talk.isConnected) { talk.currentTime = 0; talk.play().catch(() => {}); }
+  if (on && talk.isConnected) talk.play().catch(() => {});
 }
 function setLive(live) {
   btn.classList.toggle("live", live);
@@ -111,7 +112,7 @@ btn.addEventListener("click", async () => {
   $("status").textContent = "Connecting…";
   $("caption").textContent = "";
   // Start both clips inside the tap so iPhone lets them play.
-  listen.play().catch(() => {}); talk.play().then(() => talk.pause()).catch(() => {});
+  talk.play().catch(() => {});
   try {
     convo = await Conversation.startSession({
       agentId: AGENT_ID,
