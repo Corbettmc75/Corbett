@@ -149,7 +149,9 @@ btn.addEventListener("click", async () => {
         // Show why an unexpected hang-up happened, so it can be fixed.
         if (d && d.reason !== "user") {
           const why = [d.reason === "agent" ? "Call ended by the agent" : "Call dropped", d.message, d.closeReason, d.closeCode].filter(Boolean).join(" · ");
-          $("caption").textContent = why;
+          $("caption").textContent = /quota|credits/i.test(why)
+            ? "Corbett's talk time has run out for this month. Add credits in ElevenLabs, or it comes back when the plan renews."
+            : why;
         }
       },
       onModeChange: ({ mode }) => {
@@ -164,10 +166,14 @@ btn.addEventListener("click", async () => {
     applyMic(); // the greeting may already be playing
   } catch (e) {
     convo = null; setLive(false); btn.disabled = false;
-    $("status").textContent = /permission|denied|notallowed/i.test(String(e && (e.name || e.message)))
-      ? "Allow the microphone, then tap to call."
+    const why = String((e && (e.message || e.name)) || e || "");
+    const outOfTime = /quota|credits/i.test(why);
+    $("status").textContent = outOfTime ? "Out of talk time for now"
+      : /permission|denied|notallowed/i.test(why) ? "Allow the microphone, then tap to call."
       : "Couldn't connect. Tap to try again.";
-    $("caption").textContent = String((e && e.message) || e || "");
+    $("caption").textContent = outOfTime
+      ? "Corbett's talk time has run out for this month. Add credits in ElevenLabs, or it comes back when the plan renews."
+      : why;
     console.error(e);
   }
 });
