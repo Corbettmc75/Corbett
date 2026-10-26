@@ -40,7 +40,13 @@ footer { position: fixed; left: 0; right: 0; bottom: 0; padding: 0 18px max(26px
 #call svg { width: 38px; height: 38px; }
 #call.live svg { transform: rotate(135deg); }
 #call:disabled { opacity: 0.6; }
-#call:focus-visible { outline: 3px solid var(--gold-hi); outline-offset: 4px; }
+#call:focus-visible, #mute:focus-visible { outline: 3px solid var(--gold-hi); outline-offset: 4px; }
+.controls { display: flex; align-items: center; justify-content: center; gap: 28px; }
+#mute { width: 64px; height: 64px; border-radius: 50%; border: 1px solid rgba(232, 201, 138, 0.5); display: grid; place-items: center; cursor: pointer; color: var(--gold-hi); background: rgba(7, 12, 36, 0.6); box-shadow: 0 6px 24px rgba(0,0,0,0.5); }
+#mute[aria-pressed="true"] { background: var(--gold); color: #1A1534; }
+#mute svg { width: 28px; height: 28px; }
+#mute .off, #mute[aria-pressed="true"] .on { display: none; }
+#mute[aria-pressed="true"] .off { display: block; }
 </style>
 </head>
 <body>
@@ -56,7 +62,13 @@ footer { position: fixed; left: 0; right: 0; bottom: 0; padding: 0 18px max(26px
 <footer>
   <p id="caption" aria-live="polite"></p>
   <p id="status">Tap to call</p>
+  <div class="controls">
+  <button id="mute" aria-label="Mute my microphone" aria-pressed="false" hidden>
+    <svg class="on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" fill="currentColor"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3M8.5 21h7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <svg class="off" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 9.3V5a3 3 0 0 0-5.8-1.1M9 9v2a3 3 0 0 0 4.6 2.5M19 11a7 7 0 0 1-1.2 3.9M5 11a7 7 0 0 0 10.6 6M12 18v3M8.5 21h7M3 3l18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+  </button>
   <button id="call" aria-label="Call Corbett"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg></button>
+  </div>
 </footer>
 <script type="module">
 import { Conversation } from "https://cdn.jsdelivr.net/npm/@elevenlabs/client@1.26.0/+esm";
@@ -65,6 +77,19 @@ const AGENT_ID = "agent_2601m55j8jt6fq99h55s2134zwq4";
 const $ = (id) => document.getElementById(id);
 const stage = $("stage"), listen = $("listen"), talk = $("talk"), btn = $("call");
 let convo = null;
+// The mic is muted while Corbett talks, so background noise can't cut him off.
+// The mute button keeps it muted while he listens, too.
+let speaking = false, muted = false;
+const muteBtn = $("mute");
+function applyMic() { if (convo) try { convo.setMicMuted(speaking || muted); } catch {} }
+function listeningText() { return muted ? "Muted · tap the mic to talk" : "Listening…"; }
+muteBtn.addEventListener("click", () => {
+  muted = !muted;
+  muteBtn.setAttribute("aria-pressed", String(muted));
+  muteBtn.setAttribute("aria-label", muted ? "Unmute my microphone" : "Mute my microphone");
+  applyMic();
+  if (!speaking) $("status").textContent = listeningText();
+});
 
 // A missing clip just falls back to the photo behind it.
 for (const v of [listen, talk]) v.addEventListener("error", () => v.remove());
@@ -75,6 +100,8 @@ function setSpeaking(on) {
 }
 function setLive(live) {
   btn.classList.toggle("live", live);
+  muteBtn.hidden = !live;
+  if (!live) { muted = false; speaking = false; muteBtn.setAttribute("aria-pressed", "false"); }
   btn.setAttribute("aria-label", live ? "Hang up" : "Call Corbett");
 }
 
@@ -89,7 +116,7 @@ btn.addEventListener("click", async () => {
     convo = await Conversation.startSession({
       agentId: AGENT_ID,
       connectionType: "websocket", // WebRTC calls drop on his iPhone ("LiveKit … disconnected")
-      onConnect: () => { setLive(true); btn.disabled = false; $("status").textContent = "Listening…"; },
+      onConnect: () => { setLive(true); btn.disabled = false; $("status").textContent = listeningText(); },
       onDisconnect: (d) => {
         convo = null; setLive(false); setSpeaking(false); btn.disabled = false;
         $("status").textContent = "Tap to call";
@@ -100,13 +127,15 @@ btn.addEventListener("click", async () => {
         }
       },
       onModeChange: ({ mode }) => {
-        const speaking = mode === "speaking";
+        speaking = mode === "speaking";
         setSpeaking(speaking);
-        $("status").textContent = speaking ? "Talking…" : "Listening…";
+        applyMic();
+        $("status").textContent = speaking ? "Talking…" : listeningText();
       },
       onMessage: ({ message, source }) => { if (source === "ai" && message) $("caption").textContent = message; },
       onError: (msg) => { $("status").textContent = "Something went wrong. Tap to try again."; $("caption").textContent = String(msg || ""); console.error(msg); },
     });
+    applyMic(); // the greeting may already be playing
   } catch (e) {
     convo = null; setLive(false); btn.disabled = false;
     $("status").textContent = /permission|denied|notallowed/i.test(String(e && (e.name || e.message)))
