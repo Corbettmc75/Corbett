@@ -88,7 +88,7 @@ btn.addEventListener("click", async () => {
   try {
     convo = await Conversation.startSession({
       agentId: AGENT_ID,
-      connectionType: "webrtc", // better echo and noise handling on phones than websocket
+      connectionType: "websocket", // WebRTC calls drop on his iPhone ("LiveKit … disconnected")
       onConnect: () => { setLive(true); btn.disabled = false; $("status").textContent = "Listening…"; },
       onDisconnect: (d) => {
         convo = null; setLive(false); setSpeaking(false); btn.disabled = false;
