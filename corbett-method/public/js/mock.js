@@ -58,7 +58,7 @@ const estimate = () => ({
   ],
   audit: [{ productKey: 'lumber:cedartone:6x6:12', rowQty: 7, from: [{ componentId: 'tr-upper', basis: 'drawing', formula: '2 posts' }, { componentId: 'tr-center', basis: 'drawing', formula: '3 posts' }, { componentId: 'tr-lower', basis: 'drawing', formula: '2 posts' }] }],
 });
-let extractionPolls = 0;
+let extractionPolls = 99;
 export async function handle(method, path, body) {
   await new Promise(r => setTimeout(r, 120));
   const p = path.split('?')[0];

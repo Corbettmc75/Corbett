@@ -581,17 +581,21 @@ async function revisionsSection(id) {
   const revs = Array.isArray(r) ? r : (r.revisions || []);
   return h('ul', { class: 'plain' }, revs.slice().sort((a, b) => b.version - a.version).map(v => h('li', { class: 'item small' }, h('strong', null, `v${v.version}`), ` · ${when(v.created_at || v.createdAt || v.updatedAt)} · ${v.author || v.updatedBy || ''}`, v.summary ? h('div', { class: 'muted' }, v.summary) : null)));
 }
+function auditName(a, e) {
+  const row = (e.shopping || []).find(r => rowKey(r) === (a.rowId || a.productKey)) || (e.shopping || []).find(r => r.productKey === a.productKey);
+  return row ? productLabel(row) : (lumberLabel(a.productKey) || a.productKey);
+}
 function detailText(d) {
   if (typeof d === 'string') return d;
   return Object.entries(d).filter(([, v]) => v !== null && typeof v !== 'object').map(([k, v]) => `${k}: ${v}`).join(' · ');
 }
 async function auditSection(id) {
   const r = await api.get(`/api/jobs/${enc(id)}/audit`).catch(() => null);
-  const entries = r ? (Array.isArray(r) ? r : (r.entries || r.audit || [])) : [];
+  const entries = r ? (Array.isArray(r) ? r : (r.log || r.entries || r.audit || [])) : [];
   const e = store.estimate;
   return h('div', null,
     entries.length ? h('ul', { class: 'plain' }, entries.slice(0, 100).map(x => h('li', { class: 'item small' }, `${when(x.at)} · ${x.username || x.by || ''} · ${(x.action || '').replace(/-/g, ' ')}`, x.detail ? h('div', { class: 'muted' }, detailText(x.detail)) : null))) : h('div', { class: 'muted' }, 'No activity log yet.'),
-    e?.audit?.length ? h('div', null, h('h4', null, 'Shopping quantities → sources'), e.audit.map(a => h('details', { class: 'why' }, h('summary', null, `${lumberLabel(a.productKey) || a.productKey}${(a.rowId || '').endsWith('|provisional') ? ' (provisional)' : ''}: ${num(a.rowQty)}`),
+    e?.audit?.length ? h('div', null, h('h4', null, 'Shopping quantities → sources'), e.audit.map(a => h('details', { class: 'why' }, h('summary', null, `${auditName(a, e)}${(a.rowId || '').endsWith('|provisional') ? ' (provisional)' : ''}: ${a.rowQty == null ? 'unknown' : num(a.rowQty)}`),
       h('ul', null, (a.from || []).map(f => h('li', null, f.componentId ? `${compName(f.componentId)}: ` : '', f.formula || f.ref || '', ' ', f.basis ? `(${BASIS[f.basis] || f.basis})` : '')))))) : null);
 }
 
