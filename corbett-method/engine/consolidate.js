@@ -85,7 +85,7 @@ export function consolidate({ requirements = [], cutPlans = {}, rules = {}, piec
     for (const [productKey, boards] of [...byKey.entries()].sort((a, b) => b[0].localeCompare(a[0], undefined, { numeric: true }))) {
       const info = productInfo(productKey);
       const eligible = boards.filter(b => b.cuts.every(c => c.allowanceEligible !== false)).length;
-      const allowanceQty = pct > 0 ? Math.ceil(eligible * pct / 100 - 1e-9) : 0;
+      const allowanceQty = pct > 0 && eligible > 0 ? Math.ceil(eligible * pct / 100 - 1e-9) : 0;
       const pieceIds = boards.flatMap(b => b.cuts.map(c => c.pieceId));
       const qids = [...new Set(pieceIds.flatMap(id => pieceById.get(id)?.questionIds || []))];
       const provisional = pieceIds.some(id => pieceById.get(id)?.status === 'provisional');
@@ -152,7 +152,7 @@ export function consolidate({ requirements = [], cutPlans = {}, rules = {}, piec
     }
     const base = unknown.length ? null : roundQty(baseExact, unit, rules);
     const allowanceEligible = reqs.every(r => r.allowanceEligible === true) && /^lumber:/.test(productKey);
-    const allowanceQty = allowanceEligible && base != null ? Math.ceil(base * pct / 100 - 1e-9) : 0;
+    const allowanceQty = allowanceEligible && base > 0 ? Math.ceil(base * pct / 100 - 1e-9) : 0;
     if (base != null && Math.abs(base - baseExact) > EPS) notes.push(`Exact requirement ${+baseExact.toFixed(3)} ${unit}, rounded to ${base} ${unit} purchase.`);
     if (info.packageSize == null && base != null) {
       const qid = `q.package:${productKey}`;
