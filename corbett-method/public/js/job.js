@@ -18,7 +18,7 @@ export async function jobScreen(id, tab) {
   else if (!store.estimate && !store.estimateLoading) refreshEstimate(true);
   if (!TABS.some(t => t[0] === tab)) tab = 'summary';
   const content = h('main', { class: 'page tabpage', id: 'tabcontent' });
-  const openQ = () => (store.estimate?.unresolved || []).filter(q => q.status !== 'answered').length;
+  const openQ = () => openQuestions().length;
   const nav = h('nav', { class: 'tabbar', 'aria-label': 'Job sections' });
   const drawNav = () => mount(nav, TABS.map(([k, label, icon]) => h('a', { href: `#/job/${enc(id)}/${k}`, class: k === tab ? 'on' : '', 'aria-current': k === tab ? 'page' : null },
     h('span', { class: 'ico', 'aria-hidden': 'true' }, icon), h('span', null, label),
@@ -48,6 +48,17 @@ export async function jobScreen(id, tab) {
 
 // ---------- helpers ----------
 const est = () => store.estimate;
+const rowKey = (r) => r.rowId || r.productKey;
+/** Open questions: engine's unresolved list + questions recorded from drawing analysis (not yet answered). */
+function openQuestions() {
+  const answers = store.job?.answers || {};
+  const seen = new Set(); const out = [];
+  for (const q of [...(store.estimate?.unresolved || []), ...(store.job?.drawingQuestions || [])]) {
+    if (!q || seen.has(q.id) || answers[q.id] || q.status === 'answered') continue;
+    seen.add(q.id); out.push(q);
+  }
+  return out;
+}
 function estimateGate(fn) {
   if (store.estimateError) return h('div', { class: 'card error' }, h('strong', null, 'Could not calculate this job. '), store.estimateError,
     h('div', null, h('button', { class: 'btn', onclick: () => refreshEstimate(true) }, 'Retry')));
@@ -94,7 +105,7 @@ function summaryTab(id) {
   const m = e?.metrics || {};
   const sum = (k) => beds.reduce((a, b) => a + (m[b.id]?.[k] ?? 0), 0);
   const unpriced = (e?.shopping || []).filter(r => r.unitPriceCents == null).length;
-  const openQ = (e?.unresolved || []).length;
+  const openQ = openQuestions().length;
   const scen = job.scenarios || [];
   const scenSel = scen.length ? h('select', { onchange: (ev) => setScenario(ev.target.value || null) },
     scen.map(s => h('option', { value: s.id, selected: s.id === store.scenarioId }, `${s.name}${s.selected ? ' ✓' : ''}`))) : null;
@@ -207,9 +218,9 @@ const ANSWER_OPTIONS = {
 };
 function questionsTab(id) {
   return h('div', null, busy(), estimateGate(e => {
-    const qs = e.unresolved || [];
+    const qs = openQuestions();
     const groups = {};
-    for (const q of qs) (groups[q.type] ||= []).push(q);
+    for (const q of qs) (groups[QTYPE[q.type] ? q.type : 'construction_detail'] ||= []).push(q);
     const answered = Object.entries(store.job.answers || {});
     return h('div', null,
       qs.length ? h('p', { class: 'hint' }, 'Only things the drawing and standards cannot settle. Each answer is saved to this job and kept on re-analysis.')
@@ -232,6 +243,7 @@ function questionCard(q, id) {
   return h('div', { class: 'card q' },
     h('div', { class: 'qtext' }, q.text),
     q.provisional ? h('div', { class: 'small muted' }, `Meanwhile: ${q.provisional}`) : null,
+    q.extractionId ? h('div', { class: 'small muted' }, 'Raised while reading the drawing') : null,
     (q.componentIds || []).length ? h('div', { class: 'small muted' }, `Affects: ${q.componentIds.map(compName).join(', ')}`) : null,
     q.type === 'missing_price' ? h('div', { class: 'stack' },
       canEdit() ? h('button', { class: 'btn', onclick: () => catalogEntrySheet({ productKey: (q.productKeys || [])[0] || '' }, () => refreshEstimate(true)) }, 'Add supplier price') : null)
@@ -251,7 +263,7 @@ function shopTab(id) {
     const unresolved = rows.filter(r => r.status === 'unresolved');
     const known = rows.reduce((a, r) => a + (r.extendedCents ?? 0), 0);
     const unpriced = rows.filter(r => r.unitPriceCents == null).length;
-    const qmap = Object.fromEntries((e.unresolved || []).map(q => [q.id, q]));
+    const qmap = Object.fromEntries(openQuestions().map(q => [q.id, q]));
     const cats = {};
     for (const r of ready) (cats[r.category || 'other'] ||= []).push(r);
     return h('div', null,
@@ -268,10 +280,12 @@ function shopTab(id) {
   }));
 }
 function shopCard(r, e, qmap) {
-  const audit = (e.audit || []).find(a => a.productKey === r.productKey);
+  const audit = (e.audit || []).find(a => (a.rowId || a.productKey) === rowKey(r));
   const pkg = r.packageSize && r.packageSize !== 1 ? ` (${num(r.packageSize)} ${unitLabel(r.packageUnit, r.packageSize)} each)` : '';
-  return h('div', { class: `card shop st-${r.status}` },
-    h('div', { class: 'row top' }, h('div', { class: 'pname' }, productLabel(r)), statusChip(r.status)),
+  return h('div', { class: `card shop st-${r.status}`, 'data-row': rowKey(r) },
+    h('div', { class: 'row top' }, h('div', { class: 'pname' }, productLabel(r)),
+      r.provisionalOnly ? h('span', { class: 'chip st-provisional' }, 'Provisional — awaiting answer') : statusChip(r.status)),
+    r.provisionalOnly ? h('div', { class: 'small muted' }, 'Separate from the confirmed boards above — buy only once the question is answered.') : null,
     h('div', { class: 'qtyline' }, h('span', { class: 'qty' }, qtyText(r)), h('span', { class: 'muted' }, pkg)),
     r.allowanceQty ? h('div', { class: 'small' }, `Base ${qtyText(r, r.baseQty)} + ${num(r.allowanceQty)} extra allowance`) : null,
     h('div', { class: 'row small' },
@@ -472,6 +486,8 @@ function sourcesSection(id) {
       h('div', { class: 'small muted' }, [s.revision, s.date, s.pages ? `${s.pages} page(s)` : null].filter(Boolean).join(' · ')),
       s.fileId ? h('a', { href: `/api/files/${enc(s.fileId)}`, target: '_blank', rel: 'noopener' },
         h('img', { class: 'thumb', loading: 'lazy', alt: `Page 1 of ${s.title || 'drawing'}`, src: `/api/files/${enc(s.fileId)}/pages/1.png` })) : h('div', { class: 'small muted' }, 'File not uploaded to this job.'))),
+    (store.job.drawingNotes || []).length ? h('details', { class: 'why' }, h('summary', null, `${store.job.drawingNotes.length} notes read from the drawing`),
+      h('ul', null, store.job.drawingNotes.map(n => h('li', null, n.kind === 'exclusion' ? h('strong', null, 'Exclusion: ') : null, n.text)))) : null,
     (store.job.extractions || []).length ? h('div', { class: 'small muted' }, `${store.job.extractions.length} analysis run(s); last ${when(store.job.extractions.at(-1).at)}`) : null,
     h('a', { class: 'btn block', href: `#/job/${enc(id)}/upload` }, 'Upload drawing / re-analyze'),
     h('p', { class: 'hint' }, 'Re-analysis never erases confirmed corrections, answers or the price catalog.'));
@@ -533,7 +549,8 @@ function catalogEntrySheet(x, after) {
 function actualsSection() {
   const job = store.job; const a = job.actuals || { purchases: [], leftovers: [], costs: [] };
   const rows = store.estimate?.shopping || [];
-  const prodSel = () => h('select', null, rows.map(r => h('option', { value: r.productKey }, productLabel(r))), h('option', { value: 'other' }, 'Other'));
+  const uniq = [...new Map(rows.map(r => [r.productKey, r])).values()];
+  const prodSel = () => h('select', null, uniq.map(r => h('option', { value: r.productKey }, productLabel(r))), h('option', { value: 'other' }, 'Other'));
   const addPurchase = () => {
     const p = prodSel(), q = h('input', { type: 'number', step: 'any', inputmode: 'decimal' }), t = dollarsIn(null), s = h('input', { type: 'text', value: 'Menards' }), d = h('input', { type: 'date', value: new Date().toISOString().slice(0, 10) }), n = h('input', { type: 'text' });
     sheet('Record purchase', h('div', null, field('Product', p), field('Quantity', q), field('Total paid ($)', t), field('Supplier', s), field('Date', d), field('Note', n)), (close) => [h('button', { class: 'btn primary', onclick: () => {
@@ -544,7 +561,8 @@ function actualsSection() {
     sheet('Record leftover stock', h('div', null, field('Product', p), field('Length (in) — blank if not lumber', L), field('Quantity', q), field('Note', n)), (close) => [h('button', { class: 'btn primary', onclick: () => {
       edit(job => { job.actuals = job.actuals || { purchases: [], leftovers: [], costs: [] }; (job.actuals.leftovers ||= []).push({ id: 'l-' + Date.now().toString(36), productKey: p.value, lengthIn: toNum(L.value), qty: toNum(q.value), note: n.value }); }); close(); } }, 'Save')]);
   };
-  const planned = Object.fromEntries(rows.map(r => [r.productKey, r]));
+  const planned = {};
+  for (const r of rows) { const x = planned[r.productKey]; planned[r.productKey] = x ? { ...x, totalQty: (x.totalQty || 0) + (r.totalQty || 0), extendedCents: x.extendedCents == null || r.extendedCents == null ? null : x.extendedCents + r.extendedCents } : r; }
   const byProd = {};
   for (const p of a.purchases || []) { const x = (byProd[p.productKey] ||= { qty: 0, cents: 0 }); x.qty += p.qty || 0; x.cents += p.totalCents || 0; }
   return h('div', null,
@@ -573,7 +591,7 @@ async function auditSection(id) {
   const e = store.estimate;
   return h('div', null,
     entries.length ? h('ul', { class: 'plain' }, entries.slice(0, 100).map(x => h('li', { class: 'item small' }, `${when(x.at)} · ${x.username || x.by || ''} · ${(x.action || '').replace(/-/g, ' ')}`, x.detail ? h('div', { class: 'muted' }, detailText(x.detail)) : null))) : h('div', { class: 'muted' }, 'No activity log yet.'),
-    e?.audit?.length ? h('div', null, h('h4', null, 'Shopping quantities → sources'), e.audit.map(a => h('details', { class: 'why' }, h('summary', null, `${lumberLabel(a.productKey) || a.productKey}: ${num(a.rowQty)}`),
+    e?.audit?.length ? h('div', null, h('h4', null, 'Shopping quantities → sources'), e.audit.map(a => h('details', { class: 'why' }, h('summary', null, `${lumberLabel(a.productKey) || a.productKey}${(a.rowId || '').endsWith('|provisional') ? ' (provisional)' : ''}: ${num(a.rowQty)}`),
       h('ul', null, (a.from || []).map(f => h('li', null, f.componentId ? `${compName(f.componentId)}: ` : '', f.formula || f.ref || '', ' ', f.basis ? `(${BASIS[f.basis] || f.basis})` : '')))))) : null);
 }
 

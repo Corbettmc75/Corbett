@@ -11,6 +11,7 @@ import { applyProposal, protectServerFields, validateJobDoc, newJobDoc, applyCor
 import { sniffMime, pdfInfo, renderPage, isPdf } from './extract/pdf.js';
 import { AnalysisQueue } from './extract/pipeline.js';
 import { redact } from './extract/anthropic.js';
+import { lookupPrice } from './pricelookup.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = join(ROOT, 'public');
@@ -298,6 +299,13 @@ export function createServer({ dataDir = process.env.DATA_DIR || join(ROOT, 'var
     if (!store.deleteCatalog(params.id)) throw new HttpError(404, 'Catalog entry not found.');
     store.audit(user, 'catalog-delete', null, { id: params.id });
     sendJson(res, 200, { ok: true });
+  });
+  // Check current price: returns a candidate only; saving it is a separate, explicit POST /api/catalog.
+  route('POST', '/api/catalog/lookup', { role: 'editor' }, async (req, res, { user }) => {
+    const b = await readJson(req);
+    const result = await lookupPrice({ url: b.url, productKey: String(b.productKey || '').slice(0, 200) }, { fetchImpl });
+    store.audit(user, 'price-lookup', null, { url: String(b.url || '').slice(0, 500), ok: result.ok, error: result.error || null });
+    sendJson(res, 200, result);
   });
   route('POST', '/api/catalog/import', { role: 'editor' }, async (req, res, { user }) => {
     const ct = String(req.headers['content-type'] || '');
