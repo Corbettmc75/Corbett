@@ -6,6 +6,9 @@ import { planSvg, toPoints } from './plan.js';
 
 // ---------------- Login ----------------
 export function loginScreen() {
+  if (api.isCloud) return h('main', { class: 'page login' },
+    h('div', { class: 'logo' }, h('img', { src: 'icon.svg', alt: '', width: 72, height: 72 }), h('h1', null, 'The Corbett Method'),
+      h('p', { class: 'hint' }, 'Sign in to claude.ai, then open this page again. Corbett and Courtney see the same jobs.')));
   const user = h('input', { type: 'text', autocomplete: 'username', autocapitalize: 'none', required: true });
   const pass = h('input', { type: 'password', autocomplete: 'current-password', required: true });
   const err = h('div', { class: 'formerr', role: 'alert' });
@@ -42,7 +45,7 @@ export async function jobsScreen() {
         h('div', { class: 'empty' }, 'No jobs yet. Tap “New job” and upload a drawing.'),
       h('div', { class: 'footer-actions' },
         h('span', { class: 'muted small' }, `Signed in as ${app.me?.name || app.me?.username || ''} (${app.me?.role || ''})`),
-        h('button', { class: 'linkbtn', onclick: logout }, 'Sign out'))));
+        api.isCloud ? null : h('button', { class: 'linkbtn', onclick: logout }, 'Sign out'))));
 }
 
 // ---------------- New job ----------------

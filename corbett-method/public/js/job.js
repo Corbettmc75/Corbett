@@ -289,7 +289,7 @@ function shopTab(id) {
         unpriced ? h('div', { class: 'warnline' }, `${unpriced} item${unpriced > 1 ? 's have' : ' has'} no supplier price yet — total is incomplete.`) : h('div', { class: 'okline' }, 'Every item is priced.'),
         h('div', { class: 'small muted' }, 'Prices are from saved price sheets (dated). They are not live quotes.'),
         h('div', { class: 'row gap' }, h('a', { class: 'btn', href: `/api/jobs/${enc(id)}/export/shopping.csv${store.scenarioId ? '?scenario=' + enc(store.scenarioId) : ''}` }, 'Download CSV'),
-          h('a', { class: 'btn', href: `/api/jobs/${enc(id)}/export/jobpack.html${store.scenarioId ? '?scenario=' + enc(store.scenarioId) : ''}`, target: '_blank', rel: 'noopener' }, 'Print job pack'))),
+          h('a', { class: 'btn', href: `/api/jobs/${enc(id)}/export/jobpack.html${store.scenarioId ? '?scenario=' + enc(store.scenarioId) : ''}`, target: '_blank', rel: 'noopener' }, api.isCloud ? 'Save job pack' : 'Print job pack'))),
       Object.entries(cats).map(([cat, rs]) => h('section', null, h('h3', { class: 'sechead' }, cat), rs.map(r => shopCard(r, e, qmap)))),
       unresolved.length ? h('section', null, h('h3', { class: 'sechead warnhead' }, `Not ready to buy (${unresolved.length})`),
         h('p', { class: 'hint' }, 'These depend on an open question. They are not counted as complete.'),
@@ -443,7 +443,7 @@ function moreTab(id) {
     ['Exports', () => h('div', { class: 'stack' },
       h('a', { class: 'btn block', href: `/api/jobs/${enc(id)}/export/shopping.csv` }, 'Shopping list (CSV)'),
       h('a', { class: 'btn block', href: `/api/jobs/${enc(id)}/export/cutlist.csv` }, 'Cut list (CSV)'),
-      h('a', { class: 'btn block', href: `/api/jobs/${enc(id)}/export/jobpack.html`, target: '_blank', rel: 'noopener' }, 'Printable job pack (save as PDF)'))],
+      h('a', { class: 'btn block', href: `/api/jobs/${enc(id)}/export/jobpack.html`, target: '_blank', rel: 'noopener' }, api.isCloud ? 'Job pack (HTML file to print)' : 'Printable job pack (save as PDF)'))],
     ['Scenarios', () => scenariosSection()],
     ['Construction settings for this job', () => settingsSection()],
     ['Drawings & sources', () => sourcesSection(id)],
@@ -504,8 +504,11 @@ function sourcesSection(id) {
     src.map(s => h('div', { class: 'item' },
       h('div', { class: 'row' }, h('strong', null, s.title || s.kind), h('span', { class: 'chip' }, s.kind)),
       h('div', { class: 'small muted' }, [s.revision, s.date, s.pages ? `${s.pages} page(s)` : null].filter(Boolean).join(' · ')),
-      s.fileId ? h('a', { href: `/api/files/${enc(s.fileId)}`, target: '_blank', rel: 'noopener' },
-        h('img', { class: 'thumb', loading: 'lazy', alt: `Page 1 of ${s.title || 'drawing'}`, src: `/api/files/${enc(s.fileId)}/pages/1.png` })) : h('div', { class: 'small muted' }, 'File not uploaded to this job.'))),
+      s.fileId ? (() => { const L = api.fileLinks(s.fileId);
+        if (!L.href) return h('div', { class: 'small muted' }, 'Drawing kept with the analysis; open the original from your files.');
+        return h('a', { href: L.href, target: '_blank', rel: 'noopener' },
+          L.img ? h('img', { class: 'thumb', loading: 'lazy', alt: `Page 1 of ${s.title || 'drawing'}`, src: L.img }) : 'Open drawing'); })()
+        : h('div', { class: 'small muted' }, 'File not uploaded to this job.'))),
     (store.job.drawingNotes || []).length ? h('details', { class: 'why' }, h('summary', null, `${store.job.drawingNotes.length} notes read from the drawing`),
       h('ul', null, store.job.drawingNotes.map(n => h('li', null, n.kind === 'exclusion' ? h('strong', null, 'Exclusion: ') : null, n.text)))) : null,
     (store.job.extractions || []).length ? h('div', { class: 'small muted' }, `${store.job.extractions.length} analysis run(s); last ${when(store.job.extractions.at(-1).at)}`) : null,
@@ -527,7 +530,7 @@ async function catalogSection() {
         h('div', { class: 'small muted' }, x.productKey, x.source?.file ? ` · ${x.source.file}` : ''),
         x.notes ? h('div', { class: 'small' }, x.notes) : null,
         canEdit() ? h('div', { class: 'row gap' }, h('button', { class: 'linkbtn', onclick: () => catalogEntrySheet(x, load) }, 'Edit'),
-          h('button', { class: 'linkbtn danger', onclick: async () => { if (!confirm(`Delete price for ${x.spec}?`)) return; try { await api.del(`/api/catalog/${enc(x.id)}`); toast('Deleted'); load(); refreshEstimate(); } catch (e) { toast(e.message, 'error'); } } }, 'Delete')) : null)));
+          h('button', { class: 'linkbtn danger', onclick: async (ev) => { const b = ev.currentTarget; if (b.dataset.armed !== '1') { b.dataset.armed = '1'; b.textContent = 'Tap again to delete'; setTimeout(() => { b.dataset.armed = ''; b.textContent = 'Delete'; }, 4000); return; } try { await api.del(`/api/catalog/${enc(x.id)}`); toast('Deleted'); load(); refreshEstimate(); } catch (e) { toast(e.message, 'error'); } } }, 'Delete')) : null)));
     };
     q.addEventListener('input', draw);
     const file = h('input', { type: 'file', accept: '.csv,text/csv', class: 'visually-hidden', id: 'csvimp' });

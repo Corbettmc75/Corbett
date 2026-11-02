@@ -3,3 +3,5 @@ var/
 *.db
 *.db-*
 .env
+dist-artifact/
+dist-artifact.files.json

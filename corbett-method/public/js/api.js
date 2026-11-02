@@ -1,5 +1,9 @@
 // API client: same-origin cookies, X-CSRF on mutations, typed errors.
 const MOCK = new URLSearchParams(location.search).has('mock');
+// Cloud mode: running as a private claude.ai page (window.claude exists before any page script runs).
+const CLOUD = !MOCK && typeof window !== 'undefined' && !!window.claude;
+let cloudMod = null;
+async function cloud() { if (!cloudMod) cloudMod = await import('./cloud.js'); return cloudMod; }
 let csrf = null;
 let mockMod = null;
 async function mock() { if (!mockMod) mockMod = await import('./mock.js'); return mockMod; }
@@ -9,6 +13,28 @@ export class ApiError extends Error {
 }
 export function setCsrf(t) { if (t) csrf = t; }
 export const isMock = MOCK;
+export const isCloud = CLOUD;
+
+/** Links to an uploaded drawing: {href, img} (img only when a page image is available). */
+export function fileLinks(fileId) {
+  if (CLOUD) return cloudMod ? cloudMod.fileLinkSync(fileId) : { href: null, img: null };
+  const id = encodeURIComponent(fileId);
+  return { href: `/api/files/${id}`, img: `/api/files/${id}/pages/1.png` };
+}
+
+// In cloud mode, export links (/api/jobs/:id/export/...) are saved through the viewer instead of navigated.
+if (CLOUD) {
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest?.('a[href^="/api/"]');
+    if (!a) return;
+    e.preventDefault();
+    const href = a.getAttribute('href');
+    const label = a.textContent; a.setAttribute('aria-busy', 'true');
+    cloud().then(m => m.saveExport(href)).then(ok => { if (!ok) throw new Error('Not available in the phone app.'); })
+      .catch(err => { import('./h.js').then(h => h.toast(err.message || 'Could not save the file.', 'error')); })
+      .finally(() => { a.removeAttribute('aria-busy'); a.textContent = label; });
+  }, true);
+}
 
 function friendly(status, body) {
   if (body && typeof body.error === 'string') return body.error;
@@ -23,6 +49,10 @@ function friendly(status, body) {
 
 export async function request(method, path, body, headers = {}) {
   if (MOCK) return (await mock()).handle(method, path, body, headers);
+  if (CLOUD) {
+    try { return await (await cloud()).handle(method, path, body, headers); }
+    catch (e) { if (e instanceof ApiError) throw e; throw new ApiError(500, null, e?.message || 'Something went wrong.'); }
+  }
   const opts = { method, credentials: 'same-origin', headers: { ...headers } };
   if (method !== 'GET' && method !== 'HEAD' && csrf) opts.headers['X-CSRF'] = csrf;
   if (body !== undefined && !(body instanceof Blob) && typeof body !== 'string') {
@@ -45,6 +75,7 @@ export const del = (p) => request('DELETE', p);
 /** Upload with progress (XHR gives upload progress; fetch does not). */
 export function upload(path, file, onProgress) {
   if (MOCK) return mock().then(m => m.upload(path, file, onProgress));
+  if (CLOUD) return cloud().then(m => m.upload(path, file, onProgress));
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', path);

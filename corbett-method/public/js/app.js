@@ -20,6 +20,7 @@ async function ensureMe() {
   } catch (e) { if (e.status === 401 || e.status === 0 || e.status === 404) return null; throw e; }
 }
 export async function logout() {
+  if (api.isCloud) { toast('You are signed in through claude.ai. Sign out there.'); return; }
   try { await api.post('/api/logout'); } catch {}
   app.me = null; store.jobId = null; store.job = null;
   go('#/login');
@@ -88,12 +89,12 @@ window.addEventListener('hashchange', route);
 window.addEventListener('beforeunload', (e) => { if (store.pending.length || store.status === 'saving') { e.preventDefault(); e.returnValue = ''; } });
 
 // ---------- PWA ----------
-if ('serviceWorker' in navigator && !api.isMock) navigator.serviceWorker.register('/sw.js').catch(() => {});
+if ('serviceWorker' in navigator && !api.isMock && !api.isCloud) navigator.serviceWorker.register('/sw.js').catch(() => {});
 const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
 export function installHint() {
   let dismissed = false; try { dismissed = localStorage.getItem('installHintDismissed') === '1'; } catch {}
-  if (!isIOS || standalone || dismissed) return null;
+  if (api.isCloud || !isIOS || standalone || dismissed) return null;
   const el = h('div', { class: 'card hintcard' },
     h('strong', null, 'Install on your iPhone: '), 'tap Share ', h('span', { 'aria-hidden': 'true' }, '⎋'), ' then “Add to Home Screen”.',
     h('button', { class: 'linkbtn', onclick: () => { try { localStorage.setItem('installHintDismissed', '1'); } catch {} el.remove(); } }, 'Dismiss'));
