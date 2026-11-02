@@ -225,7 +225,12 @@ function questionsTab(id) {
     const answered = Object.entries(store.job.answers || {});
     return h('div', null,
       qs.length ? h('p', { class: 'hint' }, 'Only things the drawing and standards cannot settle. Each answer is saved to this job and kept on re-analysis.')
-        : h('div', { class: 'card ok' }, 'No open questions.'),
+        : h('div', { class: 'card ok' }, 'Nothing to answer. Every size was read or measured from the drawing, and your standards cover the rest.'),
+      (e.assumptions || []).length ? h('section', null,
+        h('h3', { class: 'sechead' }, `Standards used (${e.assumptions.length})`),
+        h('p', { class: 'hint' }, 'Applied automatically. Change one only if this job is built differently.'),
+        h('ul', { class: 'card assumptions' }, e.assumptions.map(a => h('li', null, a.text)))) : null,
+      (e.priceGaps || []).length ? h('p', { class: 'hint' }, `${e.priceGaps.length} items have no supplier price yet — they show as "price unknown" on the Shop tab. Import a price sheet under More → Price catalog.`) : null,
       Object.keys(QTYPE).filter(t => groups[t]).map(t => h('section', null,
         h('h3', { class: 'sechead' }, `${QTYPE[t]} (${groups[t].length})`),
         collapseFamilies(groups[t]).map(g => g.items ? h('details', { class: 'card qfamily' },

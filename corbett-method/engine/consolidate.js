@@ -170,7 +170,9 @@ export function consolidate({ requirements = [], cutPlans = {}, rules = {}, piec
     const allowanceEligible = reqs.every(r => r.allowanceEligible === true) && /^lumber:/.test(productKey);
     const allowanceQty = allowanceEligible && base > 0 ? Math.ceil(base * pct / 100 - 1e-9) : 0;
     if (base != null && Math.abs(base - baseExact) > EPS) notes.push(`Exact requirement ${+baseExact.toFixed(3)} ${unit}, rounded to ${base} ${unit} purchase.`);
-    if (info.packageSize == null && base != null) {
+    if (info.packageSize == null && base != null && rules?.assume?.packagesCoverCount) {
+      notes.push(`Buy the box, roll or load size that covers ${base} ${unit}.`);
+    } else if (info.packageSize == null && base != null) {
       const qid = `q.package:${productKey}`;
       issues.push(qid);
       questions.push({ id: qid, type: 'product_spec', text: `Which ${info.name} product/package should be bought? (${base} ${unit} needed)`,

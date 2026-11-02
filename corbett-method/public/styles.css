@@ -218,3 +218,4 @@ dialog.sheet::backdrop { background: rgba(0,0,0,.45); }
 .card.q .qtext { font-weight: 600; }
 .answerwrap > summary { display: inline-flex; align-items: center; min-height: 44px; cursor: pointer; font-weight: 600; }
 .answerwrap[open] > summary { margin-bottom: 6px; }
+.assumptions { margin: 0; padding-left: 1.4em; display: grid; gap: 8px; line-height: 1.4; }

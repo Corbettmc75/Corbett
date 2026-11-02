@@ -29,29 +29,49 @@ function path(comp, ctx) {
   return finish(c);
 }
 
+function hardscapeBase(c, ctx, areaSqFt, label) {
+  const H = ctx.rules.hardscape || {};
+  if (areaSqFt == null || H.baseIn == null) return;
+  c.req({ productKey: H.baseKey, role: 'paver-base', unit: 'cy', workPackage: 'wp7', qty: round(areaSqFt * H.baseIn / 12 / CY, 4), basis: 'calculation',
+    formula: `${label}: ${round(areaSqFt, 1)} sq ft × ${H.baseIn}" ÷ 12 ÷ 27`, refs: ['rule:hardscape.baseIn'], questionIds: ['q.patio-base'] });
+  if (H.sandIn) c.req({ productKey: H.sandKey, role: 'bedding-sand', unit: 'cy', workPackage: 'wp7', qty: round(areaSqFt * H.sandIn / 12 / CY, 4), basis: 'calculation',
+    formula: `${label}: ${round(areaSqFt, 1)} sq ft × ${H.sandIn}" ÷ 12 ÷ 27`, refs: ['rule:hardscape.sandIn'], questionIds: ['q.patio-base'] });
+}
+
 function patio(comp, ctx) {
   const c = collector(comp); const p = comp.props || {};
   const a = geomArea(comp.geometry);
   const qs = [];
   if (a == null) qs.push(c.q({ id: `q.patio-dims:${comp.id}`, type: 'missing_dimension',
     text: `${comp.name}: patio outline/width not dimensioned${comp.notes ? ` (${comp.notes.split('.')[0]})` : ''} — confirm patio dimensions.` }));
-  c.metrics = { areaSqFt: a == null ? null : round(a, 3) };
-  c.req({ productKey: p.product, role: 'pavers', unit: 'sqft', qty: a == null ? null : round(a, 3), workPackage: 'wp7',
-    basis: 'drawing', formula: 'Patio field area (border rows deducted once border is resolved)', questionIds: [...qs, `q.pkg:${p.product}`] });
   const b = p.border;
+  // Border band: runs (outer lengths per bordered side) × band width, minus the overlap at inside corners.
+  const runs = (b?.runsFt || []).map(Number).filter(x => x > 0);
+  const w = (b?.widthIn ?? ctx.rules.hardscape?.borderWidthIn) != null ? Number(b?.widthIn ?? ctx.rules.hardscape.borderWidthIn) / 12 : null;
+  const borderLf = runs.length ? runs.reduce((x, y) => x + y, 0) : null;
+  const borderArea = borderLf != null && w != null ? borderLf * w - Math.max(0, runs.length - 1) * w * w : null;
+  const field = a != null ? (borderArea != null ? a - borderArea : a) : null;
+  c.metrics = { areaSqFt: a == null ? null : round(a, 2), borderLf: borderLf == null ? null : round(borderLf, 2), borderAreaSqFt: borderArea == null ? null : round(borderArea, 2), fieldSqFt: field == null ? null : round(field, 2) };
+  c.req({ productKey: p.product, role: 'pavers', unit: 'sqft', qty: field == null ? null : round(field, 2), workPackage: 'wp7',
+    basis: comp.provenance?.geometry?.basis ?? 'drawing',
+    formula: field == null ? 'Patio field area' : `${round(a, 1)} sq ft patio − ${round(borderArea ?? 0, 1)} sq ft border band = ${round(field, 1)} sq ft field`, questionIds: [...qs, `q.pkg:${p.product}`] });
   if (b) {
-    const ans = ctx.job.answers?.['q.patio-border']?.value;
-    let key = null, qids = [...qs];
+    const ans = ctx.job.answers?.['q.patio-border']?.value ?? ctx.rules.assume?.patioBorder;
+    let key, qids = [...qs];
     if (b.productDrawing && b.productProposal && b.productDrawing !== b.productProposal && !ans) {
       qids.push(c.q({ id: 'q.patio-border', type: 'scope_conflict',
         text: 'Updated drawing names Courtstone (Basalt) border; signed proposal names Copthorne (Basalt), 2 rows on 3 sides. Which?',
         productKeys: [b.productDrawing, b.productProposal] }));
       key = b.productProposal;
     } else key = ans === 'drawing' || /courtstone/i.test(ans || '') ? b.productDrawing : (b.productProposal ?? b.productDrawing);
-    c.req({ productKey: key, role: 'patio-border', unit: 'lf', qty: null, workPackage: 'wp7', status: 'unresolved',
-      formula: `${b.rows ?? '?'} rows × border run on ${b.sides ?? '?'} sides (run length waits on patio dimensions)`, questionIds: qids });
+    const rows = Number(b.rows) || null;
+    c.req({ productKey: key, role: 'patio-border', unit: 'lf', qty: borderLf != null && rows ? round(borderLf * rows, 2) : null, workPackage: 'wp7',
+      status: borderLf != null && rows ? 'ok' : 'unresolved',
+      formula: borderLf != null ? `${rows} rows × ${round(borderLf, 2)} ft on ${runs.length} sides (${runs.map(x => round(x, 2)).join(' + ')} ft)` : 'Border run waits on patio dimensions',
+      questionIds: [...qids, `q.pkg:${key}`] });
   }
-  if (p.base == null) c.q({ id: 'q.patio-base', type: 'construction_detail',
+  hardscapeBase(c, ctx, a, comp.name);
+  if (ctx.rules.hardscape?.baseIn == null) c.q({ id: 'q.patio-base', type: 'construction_detail',
     text: 'Patio and stoop base: depth/material spec (kept separate from the path base)?' });
   return finish(c);
 }
@@ -62,32 +82,60 @@ function stoop(comp, ctx) {
   const qs = [];
   if (!comp.geometry) qs.push(c.q({ id: `q.stoop-dims:${comp.id}`, type: 'missing_dimension',
     text: `${comp.name}: only ${comp.notes?.match(/\d+'/)?.[0] ?? 'one side'} is labelled — stoop depth and coping run?` }));
-  else qs.push(c.q({ id: `q.stoop-detail:${comp.id}`, type: 'construction_detail',
+  else if (ctx.rules.hardscape?.baseIn == null) qs.push(c.q({ id: `q.stoop-detail:${comp.id}`, type: 'construction_detail',
     text: `${comp.name}: step riser height, which edges get coping, and how the wrap walls are built?` }));
-  c.metrics = { wrapAreaSqFt: a == null ? null : round(a, 3),
-    existingAreaSqFt: p.existing ? round(p.existing.lengthFt * p.existing.widthFt, 3) : null };
-  if (p.product) c.req({ productKey: p.product, role: 'stoop-pavers', unit: 'sqft', qty: null, workPackage: 'wp7', status: 'unresolved',
-    formula: `Wrap ${c.metrics.wrapAreaSqFt ?? '?'} sq ft outline; paver quantity waits on wrap/step detail`, questionIds: qs });
-  if (p.coping?.product) c.req({ productKey: p.coping.product, role: 'stoop-coping', unit: 'lf', qty: null, workPackage: 'wp7', status: 'unresolved',
-    formula: 'Coping run waits on which edges are coped', questionIds: [...qs, `q.pkg:${p.coping.product}`] });
+  const ex = p.existing ? p.existing.lengthFt * p.existing.widthFt : null;
+  const wrap = a != null ? (ex != null ? a - ex : a) : null;
+  // Coping follows the exposed (not-against-house) outer edges given in props.copingEdgesFt.
+  const coping = Array.isArray(p.copingEdgesFt) ? p.copingEdgesFt.reduce((x, y) => x + Number(y), 0) : null;
+  c.metrics = { outlineSqFt: a == null ? null : round(a, 2), existingAreaSqFt: ex == null ? null : round(ex, 2), wrapStepSqFt: wrap == null ? null : round(wrap, 2), copingLf: coping };
+  if (p.product) c.req({ productKey: p.product, role: 'stoop-pavers', unit: 'sqft', qty: wrap == null ? null : round(wrap, 2), workPackage: 'wp7',
+    status: wrap == null ? 'unresolved' : 'ok',
+    formula: ex != null ? `${round(a, 2)} sq ft wrap outline − ${round(ex, 2)} sq ft existing stoop = ${round(wrap, 2)} sq ft step` : `${round(a ?? 0, 2)} sq ft`,
+    questionIds: [...qs, `q.pkg:${p.product}`] });
+  if (p.coping?.product) c.req({ productKey: p.coping.product, role: 'stoop-coping', unit: 'lf', qty: coping == null ? null : round(coping, 2), workPackage: 'wp7',
+    status: coping == null ? 'unresolved' : 'ok',
+    formula: coping == null ? 'Coping run waits on stoop size' : `Exposed edges ${p.copingEdgesFt.map(x => round(x, 2)).join(' + ')} ft`,
+    questionIds: [...qs, `q.pkg:${p.coping.product}`] });
+  if (wrap != null && p.product) hardscapeBase(c, ctx, wrap, comp.name);
   return finish(c);
 }
 
 function screen(comp, ctx) {
-  const c = collector(comp); const p = comp.props || {};
+  const c = collector(comp); const p = comp.props || {}; const S = ctx.rules.screen || {};
   const runs = p.runs ?? [{ lengthFt: comp.geometry?.lengthFt ?? null, ref: 'drawing' }];
   const known = runs.filter(r => r.lengthFt != null).reduce((s, r) => s + Number(r.lengthFt), 0);
   const missing = runs.filter(r => r.lengthFt == null);
   const qs = [];
   if (missing.length) qs.push(c.q({ id: `q.screen-runs:${comp.id}`, type: 'missing_dimension',
     text: `${comp.name}: length of ${missing.map(r => r.ref).join('; ')}?` }));
-  qs.push(c.q({ id: 'q.screen-construction', type: 'construction_detail',
-    text: `4' screens & dog fence ("same lumber as boxes"): post size/spacing, framing and board layout per panel?` }));
-  c.metrics = { knownLengthFt: known, heightFt: p.heightFt ?? null };
-  c.req({ productKey: comp.type === 'fence' ? 'assembly:dog-fence' : 'assembly:screen-panel', role: comp.type, unit: 'lf',
-    qty: missing.length ? null : known, status: 'unresolved', workPackage: 'wp8',
-    formula: `${known}' known${missing.length ? ` + ${missing.length} undimensioned run(s)` : ''} × ${p.heightFt ?? '?'}' tall; lumber list waits on panel construction`,
-    questionIds: qs });
+  c.metrics = { lengthFt: round(known, 2), heightFt: p.heightFt ?? null };
+  if (S.courses == null || missing.length) {
+    qs.push(c.q({ id: 'q.screen-construction', type: 'construction_detail',
+      text: `4' screens & dog fence ("same lumber as boxes"): post size/spacing, framing and board layout per panel?` }));
+    c.req({ productKey: comp.type === 'fence' ? 'assembly:dog-fence' : 'assembly:screen-panel', role: comp.type, unit: 'lf',
+      qty: missing.length ? null : known, status: 'unresolved', workPackage: 'wp8',
+      formula: `${known}' known × ${p.heightFt ?? '?'}' tall; lumber list waits on panel construction`, questionIds: qs });
+    return finish(c);
+  }
+  // Same lumber as the boxes: horizontal 2×6 courses on 4×4 posts (continuous runs share corner posts).
+  const mat = ctx.rules.bed.wallMaterial;
+  const boardGroup = `lumber:${mat}:2x6`, postGroup = `lumber:${mat}:${S.postSection || '4x4'}`;
+  let k = 0;
+  runs.forEach((r, i) => {
+    for (let course = 1; course <= S.courses; course++) {
+      c.piece({ id: `${comp.id}:r${i + 1}c${course}`, groupKey: boardGroup, lengthIn: round(r.lengthFt * 12, 3), nominalLengthIn: round(r.lengthFt * 12, 3),
+        label: `${comp.name} — run ${i + 1} (${round(r.lengthFt, 2)}') course ${course}`, role: 'screen-board', allowanceEligible: true, workPackage: 'wp8' });
+    }
+  });
+  const posts = runs.reduce((n, r) => n + Math.ceil(r.lengthFt / S.postSpacingFt - 1e-9), 0) + 1;
+  const postLen = (p.heightFt ?? 4) * 12 + (S.postEmbedIn ?? 24);
+  for (let i = 1; i <= posts; i++) c.piece({ id: `${comp.id}:post${i}`, groupKey: postGroup, lengthIn: postLen, nominalLengthIn: postLen,
+    label: `${comp.name} — post ${i} (${p.heightFt ?? 4}' + ${S.postEmbedIn ?? 24}" buried)`, role: 'screen-post', allowanceEligible: false, workPackage: 'wp8' });
+  c.req({ productKey: ctx.rules.bed.screwKey, role: 'screen-screws', unit: 'ea', workPackage: 'wp8', basis: 'calculation',
+    qty: runs.reduce((n, r) => n + S.courses * (Math.ceil(r.lengthFt / S.postSpacingFt - 1e-9) + 1) * 2, 0),
+    formula: `2 screws per board at each post (${S.courses} courses)`, questionIds: ['q.screen-construction'] });
+  c.metrics.posts = posts;
   return finish(c);
 }
 
@@ -105,10 +153,12 @@ function mulch(comp, ctx) {
   const a = geomArea(comp.geometry);
   const qs = [];
   if (a == null) qs.push(c.q({ id: `q.mulch-area:${comp.id}`, type: 'missing_dimension', text: `${comp.name}: area to cover (perennial beds + around AC) is not dimensioned — sq ft?` }));
-  if (p.depthIn == null) qs.push(c.q({ id: `q.mulch-depth:${comp.id}`, type: 'construction_detail', text: `${comp.name}: placement depth (inches)?` }));
+  const depth = p.depthIn ?? ctx.rules.mulch?.depthIn ?? null;
+  if (depth == null) qs.push(c.q({ id: `q.mulch-depth:${comp.id}`, type: 'construction_detail', text: `${comp.name}: placement depth (inches)?` }));
+  c.metrics = { areaSqFt: a == null ? null : round(a, 2), depthIn: depth };
   c.req({ productKey: p.product, role: 'mulch', unit: 'cy', workPackage: 'wp8',
-    qty: a != null && p.depthIn != null ? round(a * p.depthIn / 12 / CY, 4) : null,
-    formula: `${a ?? '?'} sq ft × ${p.depthIn ?? '?'}" ÷ 12 ÷ 27`, questionIds: qs });
+    qty: a != null && depth != null ? round(a * depth / 12 / CY, 4) : null,
+    formula: `${a == null ? '?' : round(a, 1)} sq ft × ${depth ?? '?'}" ÷ 12 ÷ 27`, questionIds: [...qs, `q.mulch-depth:${comp.id}`] });
   return finish(c);
 }
 
@@ -117,18 +167,22 @@ function rock(comp, ctx) {
   const a = geomArea(comp.geometry);
   const qs = [];
   if (a == null) qs.push(c.q({ id: `q.rock-area:${comp.id}`, type: 'missing_dimension', text: `${comp.name}: area?` }));
-  if (p.depthIn == null) qs.push(c.q({ id: 'q.rock-depth', type: 'missing_dimension', text: `Rock depth for the ${comp.geometry?.widthFt ?? '?'}×${comp.geometry?.lengthFt ?? '?'} (${a ?? '?'} sq ft) dog area?` }));
-  if (p.relocatedCreditCf == null) qs.push(c.q({ id: 'q.rock-credit', type: 'construction_detail', text: 'How much existing rock is being relocated into the dog area (cu ft or cu yd)? It is credited before buying new rock.' }));
-  const needCf = a != null && p.depthIn != null ? a * p.depthIn / 12 : null;
-  const netCf = needCf != null && p.relocatedCreditCf != null ? Math.max(0, needCf - p.relocatedCreditCf) : null;
-  c.metrics = { areaSqFt: a, requiredCf: needCf == null ? null : round(needCf, 3), creditCf: p.relocatedCreditCf ?? null, netCf: netCf == null ? null : round(netCf, 3) };
-  c.req({ productKey: p.product, role: 'rock', unit: 'cy', workPackage: 'wp7', qty: netCf == null ? null : round(netCf / CY, 4),
-    formula: `${a ?? '?'} sq ft × ${p.depthIn ?? '?'}" ÷ 12 − ${p.relocatedCreditCf ?? '?'} cu ft relocated, ÷ 27`, questionIds: qs });
+  const depth = p.depthIn ?? ctx.rules.rock?.depthIn ?? null;
+  const credit = p.relocatedCreditCf ?? null;
+  if (depth == null) qs.push(c.q({ id: 'q.rock-depth', type: 'missing_dimension', text: `Rock depth for the ${comp.geometry?.widthFt ?? '?'}×${comp.geometry?.lengthFt ?? '?'} (${a ?? '?'} sq ft) dog area?` }));
+  if (credit == null) qs.push(c.q({ id: 'q.rock-credit', type: 'construction_detail', text: 'How much existing rock is being relocated into the dog area (cu ft or cu yd)? It is credited before buying new rock.' }));
+  const needCf = a != null && depth != null ? a * depth / 12 : null;
+  // With the standard assumption, the full volume is listed and relocated rock is used first (buy only the shortfall).
+  const netCf = needCf != null ? Math.max(0, needCf - (credit ?? 0)) : null;
+  c.metrics = { areaSqFt: a, depthIn: depth, requiredCf: needCf == null ? null : round(needCf, 3), creditCf: credit, netCf: netCf == null ? null : round(netCf, 3) };
+  c.req({ productKey: p.product, role: 'rock', unit: 'cy', workPackage: 'wp7', qty: netCf == null ? null : round(netCf / CY, 4), allowanceEligible: false,
+    formula: `${a ?? '?'} sq ft × ${depth ?? '?'}" ÷ 12${credit ? ` − ${credit} cu ft relocated` : ' (less whatever existing rock is moved in first)'} ÷ 27`, questionIds: [...qs, 'q.rock-depth', 'q.rock-credit'] });
   return finish(c);
 }
 
 function demolition(comp, ctx) {
   const c = collector(comp); const p = comp.props || {};
+  if (ctx.rules.assume?.demolitionIsService) { c.metrics = { service: true, items: p.items || [] }; return finish(c); }
   const q = c.q({ id: 'q.demo-detail', type: 'construction_detail',
     text: 'Demolition: removal thickness and material per area (sod/soil, flagstone, concrete walk), and hauling basis (dumpster size or loads)?' });
   c.req({ productKey: 'disposal:demolition', role: 'demolition-disposal', unit: 'load', qty: null, workPackage: 'wp1', status: 'unresolved',
@@ -163,9 +217,12 @@ function drain(comp, ctx) {
   const c = collector(comp); const p = comp.props || {};
   const qs = [];
   if (p.lengthFt == null) qs.push(c.q({ id: 'q.drain-length', type: 'missing_dimension', text: '4" drain tile: route length from downspout/sump to discharge along the property line/fence?' }));
-  const fq = c.q({ id: 'q.drain-fittings', type: 'product_spec', text: `Drain tile fittings for ${(p.fittings || []).join(' and ') || 'connections'}: which adapters/tees/outlet?` });
-  c.req({ productKey: 'drain:tile-4in', role: 'drain-tile', unit: 'lf', qty: p.lengthFt ?? null, workPackage: 'wp7', formula: 'Route length', questionIds: [...qs, 'q.pkg:drain:tile-4in'] });
-  c.req({ productKey: 'drain:fittings', role: 'drain-fittings', unit: 'ea', qty: null, workPackage: 'wp7', status: 'unresolved', formula: (p.fittings || []).join(', '), questionIds: [fq] });
+  const fit = ctx.rules.drain?.fittings;
+  const fq = fit ? 'q.drain-fittings' : c.q({ id: 'q.drain-fittings', type: 'product_spec', text: `Drain tile fittings for ${(p.fittings || []).join(' and ') || 'connections'}: which adapters/tees/outlet?` });
+  c.req({ productKey: 'drain:tile-4in', role: 'drain-tile', unit: 'lf', qty: p.lengthFt ?? null, workPackage: 'wp7', basis: comp.provenance?.['props.lengthFt']?.basis ?? 'drawing',
+    formula: p.lengthFt != null ? `${p.lengthFt} ft route (${comp.provenance?.['props.lengthFt']?.ref || 'as drawn'})` : 'Route length', questionIds: [...qs, 'q.drain-length', 'q.pkg:drain:tile-4in'] });
+  c.req({ productKey: 'drain:fittings', role: 'drain-fittings', unit: 'ea', qty: fit ? fit.length : null, workPackage: 'wp7', status: fit ? 'ok' : 'unresolved',
+    formula: (fit || p.fittings || []).join(', '), questionIds: [fq] });
   return finish(c);
 }
 

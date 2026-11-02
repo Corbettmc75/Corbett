@@ -157,11 +157,22 @@ test('cross-project isolation: no leakage between jobs', () => {
   assert.deepEqual(estimateJob(seed, OPTS).shopping, est.shopping);
 });
 
-test('unresolved questions are specific and typed', () => {
-  const types = new Set(est.unresolved.map(q => q.type));
+test('unresolved questions are specific and typed (standard assumptions off)', () => {
+  const raw = estimateJob({ ...seed, settings: { ...seed.settings, useStandardAssumptions: false } }, OPTS);
+  const types = new Set(raw.unresolved.map(q => q.type));
   assert.ok(types.has('scope_conflict'));
-  assert.ok(types.has('missing_price'));
   assert.ok(types.has('product_spec'));
-  for (const q of est.unresolved) { assert.ok(q.text.length > 10); assert.ok(!/need measurements/i.test(q.text)); }
-  assert.ok(est.unresolved.some(q => /Courtstone|Copthorne/.test(q.text)));
+  for (const q of raw.unresolved) { assert.ok(q.text.length > 10); assert.ok(!/need measurements/i.test(q.text)); }
+  assert.ok(raw.unresolved.some(q => /Courtstone|Copthorne/.test(q.text)));
+  assert.ok(raw.priceGaps.length > 0, 'missing prices are listed, not asked');
+});
+
+test('with standard assumptions, Corbett is asked nothing and every assumption is listed', () => {
+  assert.equal(est.unresolved.length, 0, est.unresolved.map(q => q.id).join(', '));
+  assert.ok(est.assumptions.some(a => a.key === 'border' && /Copthorne/.test(a.text)));
+  // Missing prices stay unknown (never zero) and are shown on the shopping list.
+  for (const r of est.shopping) if (r.unitPriceCents == null) assert.equal(r.extendedCents ?? null, null);
+  // Every site item now has a quantity.
+  const none = est.shopping.filter(r => r.totalQty == null).map(r => r.productKey);
+  assert.deepEqual(none, []);
 });

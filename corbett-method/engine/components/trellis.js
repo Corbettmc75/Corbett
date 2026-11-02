@@ -1,5 +1,5 @@
 // Trellis takeoff: 6x6 posts (exact count), Y braces, paired 2x12 headers, 2x4 slats, mesh.
-import { collector, finish, ftIn, wallMaterial } from './util.js';
+import { collector, finish, ftIn, wallMaterial, round } from './util.js';
 
 export function takeoff(tr, ctx) {
   const { rules } = ctx;
@@ -37,6 +37,7 @@ export function takeoff(tr, ctx) {
   for (let k = 1; k <= nBr; k++) {
     c.piece({ id: `${tr.id}:brace${k}`, groupKey: postGroup, lengthIn: braceLen, nominalLengthIn: R.braceLengthIn,
       label: `${tr.name} — Y brace ${k} (${R.braceLengthIn}" finished)`, role: 'trellis-brace', allowanceEligible: false,
+      allowedStockFt: R.braceStockFt ?? null,
       workPackage: 'wp3', status: bpp == null ? 'provisional' : 'ok', questionIds: [braceQ, angleQ].filter(Boolean) });
   }
   const kerf = rules.lumber.kerfIn;
@@ -80,12 +81,21 @@ export function takeoff(tr, ctx) {
   // ---- mesh ----------------------------------------------------------------
   const rebar = rules.trellis.meshOption === 'rebar';
   const meshKey = rebar ? 'mesh:rebar-grid' : 'mesh:welded-6x6-0187';
-  c.q({ id: 'q.mesh-panel', type: 'product_spec',
+  // Mesh fills between posts from the bed top to the underside of the header; bought by coverage, cut to fit.
+  const headerDepthIn = 11.25;
+  const meshH = rules.trellis.meshAttachSpacingIn != null ? R.topAboveBedIn - headerDepthIn : null;
+  const clearIn = L ? L * 12 - 2 * R.postInsetFromBoxEdgeIn - (Number(p.posts) || 0) * 5.5 : null;
+  const panels = Math.max(1, (Number(p.posts) || 2) - 1);
+  if (meshH == null) c.q({ id: 'q.mesh-panel', type: 'product_spec',
     text: 'Trellis mesh: coverage is per trellis, but the purchasable panel size (W×H) and attachment hardware are not specified. Which panel?' });
-  c.req({ productKey: meshKey, role: 'mesh', unit: 'sqft', qty: null, workPackage: 'wp3', status: 'unresolved',
-    formula: `${L || '?'}' trellis × mesh height (not dimensioned)`, refs: [rebar ? 'proposal:option basic rebar mesh grid' : 'proposal:upgraded welded mesh 6×6, 0.187" wire'],
-    questionIds: ['q.mesh-panel'] });
-  c.req({ productKey: 'mesh:attachment', role: 'mesh-attachment', unit: 'ea', qty: null, workPackage: 'wp3', status: 'unresolved',
-    formula: 'Attachment hardware not specified', questionIds: ['q.mesh-panel'] });
+  const cover = meshH != null && clearIn != null ? clearIn * meshH / 144 : null;
+  c.req({ productKey: meshKey, role: 'mesh', unit: 'sqft', qty: cover == null ? null : round(cover, 1), workPackage: 'wp3', status: cover == null ? 'unresolved' : 'ok',
+    basis: 'calculation',
+    formula: cover == null ? `${L || '?'}' trellis × mesh height (not dimensioned)` : `${round(clearIn, 2)}" clear between posts (${L}' − 2 × ${R.postInsetFromBoxEdgeIn}" inset − ${p.posts} × 5.5" posts) × ${meshH}" (74" − 11.25" header)`,
+    refs: [rebar ? 'proposal:option basic rebar mesh grid' : 'proposal:upgraded welded mesh 6×6, 0.187" wire'], questionIds: ['q.mesh-panel'] });
+  const perim = cover == null ? null : 2 * (clearIn / panels + meshH);
+  c.req({ productKey: 'mesh:attachment', role: 'mesh-attachment', unit: 'ea', workPackage: 'wp3', status: perim == null ? 'unresolved' : 'ok',
+    qty: perim == null ? null : panels * Math.ceil(perim / rules.trellis.meshAttachSpacingIn),
+    formula: perim == null ? 'Attachment hardware not specified' : `${panels} panel(s) × perimeter ${round(perim, 1)}" ÷ ${rules.trellis.meshAttachSpacingIn}" (galvanized fence staples)`, questionIds: ['q.mesh-panel'] });
   return finish(c);
 }

@@ -75,7 +75,7 @@ test('Theresa: trellis end posts replace corner 4x4s; PT 4x4 only from 8\' stock
 });
 
 test('Theresa: concrete = 7 (6x6) + ceil(4x4/2)', () => {
-  const n4 = count(T.pieces, p => p.role === 'bed-post');
+  const n4 = count(T.pieces, p => p.role === 'bed-post' || p.role === 'screen-post');
   const bags = T.requirements.filter(r => r.productKey === 'concrete:fast-set:50lb').reduce((s, r) => s + r.qty, 0);
   assert.equal(bags, 7 + Math.ceil(n4 / 2));
 });
@@ -96,13 +96,15 @@ test('Theresa: no irrigation or lighting requirements', () => {
   assert.equal(count(T.requirements, r => /^(irrigation|lighting)/.test(r.productKey)), 0);
 });
 
-test('Theresa: unknowns are typed precisely', () => {
-  const byId = Object.fromEntries(T.questions.map(q => [q.id, q]));
+test('Theresa: unknowns are typed precisely (standard assumptions off)', () => {
+  const raw = { ...theresa, settings: { useStandardAssumptions: false } };
+  const T0 = buildTakeoff(raw, resolveRules(raw));
+  const byId = Object.fromEntries(T0.questions.map(q => [q.id, q]));
   assert.equal(byId['q.patio-border'].type, 'scope_conflict');
   assert.equal(byId['q.rock-depth'].type, 'missing_dimension');
   assert.equal(byId['q.pkg:screw:deck:3in'].type, 'product_spec');
   assert.equal(byId['q.mesh-panel'].type, 'product_spec');
-  assert.ok(!T.questions.some(q => q.type === 'missing_price'));
+  assert.ok(!T0.questions.some(q => q.type === 'missing_price'));
   assert.equal(byId['q.brace-offcut'].type, 'construction_detail');
 });
 

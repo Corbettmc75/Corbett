@@ -68,7 +68,7 @@ export function buildTakeoff(job, rules) {
 
   // ---- concrete (job level, rounded once) --------------------------------
   const n6 = pieces.filter(p => p.role === 'trellis-post').length;
-  const n4 = pieces.filter(p => p.role === 'bed-post').length;
+  const n4 = pieces.filter(p => p.role === 'bed-post' || p.role === 'screen-post').length;
   const C = rules.concrete;
   if (n6) J.req({ id: '_job:concrete:6x6', productKey: C.productKey, qty: n6 * C.bagsPer6x6, unit: 'bag', role: 'footings-6x6', workPackage: 'wp3',
     formula: `${n6} installed 6×6 trellis posts × ${C.bagsPer6x6} bag`, refs: ['rule:concrete.bagsPer6x6'], allowanceEligible: false });

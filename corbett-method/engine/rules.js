@@ -74,6 +74,8 @@ export const DEFAULT_RULES = {
     postInsetFromBoxEdgeIn: 15,    // confirmed (normal)
     replacesCornerPost: true,      // confirmed
     braceLengthIn: 19,             // confirmed finished length
+    braceStockFt: null,
+    meshAttachSpacingIn: null,     // standard assumption: 12" fence staples            // standard assumption: braces from 6×6×8 (12' post offcuts are too short)
     bracesPerPost: null,           // not established → q.braces-per-post
     braceAngleEnvelopeIn: 0,       // default → q.brace-angle
     slatSpacingIn: 12,             // recorded; clear vs on-center unconfirmed → q.slat-spacing
@@ -93,6 +95,16 @@ export const DEFAULT_RULES = {
     spikeKey: 'edging:spike:10in', spikeSpacingIn: 18,
     endSpikes: null,               // endpoint/corner rule unconfirmed → q.edging-ends
   },
+  hardscape: {
+    baseKey: 'aggregate:paver-base', baseIn: null,   // standard assumption: 6" compacted base
+    sandKey: 'sand:bedding', sandIn: null,           // standard assumption: 1" bedding sand
+    borderWidthIn: null,                             // measured from drawing when present
+  },
+  screen: { courses: null, postSpacingFt: null, postEmbedIn: 24, postSection: '4x4' },
+  mulch: { depthIn: null },
+  rock: { depthIn: null },
+  drain: { fittings: null },
+  assume: { patioBorder: null, demolitionIsService: null, packagesCoverCount: null, compactedVolumes: null },
   irrigation: { include: false },
   lighting:   { include: false },
 };
@@ -123,6 +135,8 @@ export const LUMBER_GROUPS = {
   'lumber:smooth-cedar:2x12':{ label: 'Smooth cedar 2×12',     actualIn: [1.5, 11.25],stockFt: [8, 12, 16], specialOrderFt: [20] },
   'lumber:rough-cedar:2x12':{ label: 'Rough-sawn cedar 2×12',  actualIn: [1.5, 11.25],stockFt: [8, 12, 16], specialOrderFt: [20] },
   'lumber:cedartone:4x4':   { label: 'CedarTone 4×4',          actualIn: [3.5, 3.5],  stockFt: [8, 10, 12], specialOrderFt: [] },
+  'lumber:smooth-cedar:4x4':{ label: 'Smooth cedar 4×4',       actualIn: [3.5, 3.5],  stockFt: [8, 10, 12], specialOrderFt: [] },
+  'lumber:rough-cedar:4x4': { label: 'Rough-sawn cedar 4×4',   actualIn: [3.5, 3.5],  stockFt: [8, 10, 12], specialOrderFt: [] },
   'lumber:cedartone:2x4':   { label: 'CedarTone 2×4',          actualIn: [1.5, 3.5],  stockFt: [8, 10, 12, 16], specialOrderFt: [] },
   'lumber:rough-cedar:2x4': { label: 'Rough-sawn cedar 2×4',   actualIn: [1.5, 3.5],  stockFt: [8, 10, 12, 16], specialOrderFt: [] },
   'lumber:cedartone:1x4':   { label: 'CedarTone 1×4 trim',     actualIn: [0.75, 3.5], stockFt: [16], specialOrderFt: [] },
@@ -166,6 +180,44 @@ export const ANSWER_TO_RULE = {
   'q.end-trim': 'lumber.endTrimIn',
 };
 
+/**
+ * Standard assumptions — the Corbett Method answers to details a drawing never shows.
+ * Applied automatically (no questions for Corbett) unless a job answer or setting overrides them;
+ * every one is listed on the estimate so it stays visible and changeable.
+ * `ids` are question ids (or id prefixes ending in ':') that the assumption settles.
+ */
+export const ASSUMPTION_APPLIES_TO = {
+  interlace: ['bed'], screws: ['bed'], supports: ['bed'], postfit: ['bed'], liner: ['bed'], staples: ['bed'], trimscrews: ['bed'], compost: ['bed'],
+  braces: ['trellis'], slats: ['trellis'], mesh: ['trellis'], edging: ['edging'], hardscape: ['patio', 'stoop'], border: ['patio'],
+  screens: ['screen', 'fence'], mulch: ['mulch'], rock: ['rock'], demo: ['demolition'], drain: ['drain'], compaction: ['path'], packages: [],
+};
+export const STANDARD_ASSUMPTIONS = [
+  { key: 'interlace', ids: ['q.interlace-start'], set: { 'bed.interlaceStart': 'long' }, text: 'Interlaced corners start with the long walls running through on the bottom course.' },
+  { key: 'screws', ids: ['q.screw-rule'], set: { 'bed.screwsPerBoardEnd': 3 }, text: '3 deck screws per board end at every corner and post (as in the corner photo).' },
+  { key: 'supports', ids: ['q.support-layout', 'q.support-layout:', 'q.support-layout-L', 'q.support-vertical'], set: {}, text: 'Middle supports keep every wall span at 5 ft or less; the opposing vertical 2×4 runs from grade to 3.5" below the top (24").' },
+  { key: 'postfit', ids: ['q.exact-fit:lumber:pt:4x4'], set: {}, text: 'Each 8 ft PT 4×4 gives one 48" bed post (two would be ⅛" short with the saw cut); the 47⅞" offcuts are kept for blocking.' },
+  { key: 'liner', ids: ['q.liner-lap', 'q.liner-allowance'], set: { 'liner.lapIn': 6 }, text: 'Liner strips cut to the full 27.5" wall height and overlapped 6" where they meet.' },
+  { key: 'staples', ids: ['q.staple-spacing'], set: { 'liner.stapleSpacingIn': 12 }, text: 'Liner stapled every 12" along the top edge before the trim goes on.' },
+  { key: 'trimscrews', ids: ['q.trim-screws'], set: { 'trim.screwSpacingIn': 16 }, text: 'Trim screwed every 16" plus one at each end.' },
+  { key: 'braces', ids: ['q.braces-per-post', 'q.brace-angle', 'q.brace-offcut'], set: { 'trellis.bracesPerPost': 2, 'trellis.braceStockFt': [8] }, text: 'Two 19" Y-braces per trellis post (19" = long point), cut from separate 6×6×8 stock because the 12 ft post offcut is too short.' },
+  { key: 'slats', ids: ['q.slat-spacing', 'q.slat-length'], set: { 'trellis.slatSpacingMode': 'on-center', 'trellis.slatLengthIn': 24 }, text: '2×4 slats 24" long across the top of the paired headers, 12" on-center.' },
+  { key: 'compost', ids: ['q.compost-area'], set: { 'soil.compostAreaBasis': 'inside' }, text: 'Compost check uses the inside soil area (the signed 12 bags are what gets bought).' },
+  { key: 'edging', ids: ['q.edging-ends'], set: { 'edging.endSpikes': 1 }, text: 'Edging gets one extra spike at the end of every run.' },
+  { key: 'hardscape', ids: ['q.patio-base', 'q.stoop-detail:'], set: { 'hardscape.baseIn': 6, 'hardscape.sandIn': 1 }, text: 'Patio and stoop step on a 6" compacted paver base with 1" bedding sand; Umbriano coping on the outer edge of the stoop wrap.' },
+  { key: 'border', ids: ['q.patio-border'], set: { 'assume.patioBorder': 'proposal' }, text: 'Patio border is Unilock Copthorne (Basalt), 2 rows on 3 sides — the signed estimate (signed 9/30) is later than the drawing (9/18).' },
+  { key: 'screens', ids: ['q.screen-construction'], set: { 'screen.courses': 8, 'screen.postSpacingFt': 6 }, text: 'AC screens and dog fence: 8 horizontal 2×6 courses (≈4 ft) of the box lumber on 4×4 posts at ≤6 ft, posts set 24" deep.' },
+  { key: 'mulch', ids: ['q.mulch-depth:'], set: { 'mulch.depthIn': 2 }, text: 'Blue slate chips placed 2" deep.' },
+  { key: 'rock', ids: ['q.rock-depth', 'q.rock-credit'], set: { 'rock.depthIn': 3 }, text: 'Dog-area rock 3" deep; existing rock is moved in first and only the shortfall is bought.' },
+  { key: 'demo', ids: ['q.demo-detail'], set: { 'assume.demolitionIsService': true }, text: 'Demolition and hauling are the signed Site Prep service lines ($500 + $900) — no materials to buy.' },
+  { key: 'drain', ids: ['q.drain-length', 'q.drain-fittings'], set: { 'drain.fittings': ['4" downspout adapter', '4" sump-line adapter', '4" tee', '4" pop-up emitter'] }, text: 'Drain tile runs along the side-yard fence line (route is not drawn) with a downspout adapter, sump adapter, tee and pop-up emitter.' },
+  { key: 'mesh', ids: ['q.mesh-panel'], set: { 'trellis.meshAttachSpacingIn': 12 }, text: 'Welded mesh fills between posts from the bed top to the underside of the header, bought by coverage and cut to fit, fastened with galvanized fence staples every 12".' },
+  { key: 'packages', ids: ['q.pkg:', 'q.package:'], set: { 'assume.packagesCoverCount': true }, text: 'Screws, staples, spikes, fabric and bulk materials: buy whatever box, roll or load covers the quantity shown.' },
+  { key: 'compaction', ids: ['q.path-compaction'], set: { 'assume.compactedVolumes': true }, text: 'Gravel and DG volumes are in-place (compacted) cubic yards.' },
+];
+
+function isSet(v) { return v !== undefined && v !== null && v !== ''; }
+function getPath(obj, dotted) { return dotted.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj); }
+
 /** Merge: DEFAULT_RULES ← shop standards ← job.settings ← selected scenario ← answered questions. */
 export function resolveRules(job = {}, scenarioId = null, standards = null) {
   const rules = structuredClone(DEFAULT_RULES);
@@ -176,6 +228,16 @@ export function resolveRules(job = {}, scenarioId = null, standards = null) {
   for (const [qid, ans] of Object.entries(job.answers || {})) {
     if (ANSWER_TO_RULE[qid] && ans && ans.value !== undefined && ans.value !== null && ans.value !== '') {
       setPath(rules, ANSWER_TO_RULE[qid], ans.value);
+    }
+  }
+  // Standard assumptions fill whatever is still unset (job.settings.useStandardAssumptions=false turns them off).
+  rules.assumptions = [];
+  if (job.settings?.useStandardAssumptions !== false) {
+    const answered = (id) => isSet(job.answers?.[id]?.value);
+    for (const a of STANDARD_ASSUMPTIONS) {
+      if (a.ids.every(id => !id.endsWith(':') && answered(id))) continue;
+      for (const [path, v] of Object.entries(a.set)) if (!isSet(getPath(rules, path))) setPath(rules, path, structuredClone(v));
+      rules.assumptions.push({ key: a.key, ids: a.ids, text: a.text });
     }
   }
   rules.irrigation.include = !!job.scope?.irrigation;

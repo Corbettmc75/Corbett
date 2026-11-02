@@ -1,5 +1,5 @@
 // Orchestrator: job → full Estimate. Pure: never mutates the input job.
-import { resolveRules } from './rules.js';
+import { resolveRules, ASSUMPTION_APPLIES_TO } from './rules.js';
 import { buildTakeoff } from './takeoff.js';
 import { planLumber, consolidate } from './consolidate.js';
 import { priceRows } from './pricing.js';
@@ -87,6 +87,14 @@ export function estimateJob(job, { catalog = [], standards = null, scenarioId = 
     }
   }
 
+  // Pieces/requirements held provisional only by questions a standard assumption settles are firm.
+  {
+    const acts = rules.assumptions || [];
+    const settled = (id) => acts.some(a => a.ids.some(x => (x.endsWith(':') ? id.startsWith(x) : id === x)));
+    for (const x of [...pieces, ...requirements]) {
+      if (x.status === 'provisional' && (x.questionIds || []).length && x.questionIds.every(settled)) { x.status = 'ok'; x.assumed = true; }
+    }
+  }
   const { cutPlans, questions: lq } = planLumber(pieces, rules, catalog, { timeLimitMs, nodeLimit });
   const { rows: unpriced, questions: cq } = consolidate({ requirements, cutPlans, rules, pieces });
   const { rows: shopping, questions: pq } = priceRows(unpriced, catalog);
@@ -114,8 +122,27 @@ export function estimateJob(job, { catalog = [], standards = null, scenarioId = 
       prev.productKeys = [...new Set([...(prev.productKeys || []), ...(q.productKeys || [])])];
     } else qmap.set(q.id, { status: 'open', componentIds: [], productKeys: [], ...q });
   }
+  // Questions settled by a standard assumption move to `assumptions`; missing prices move to `priceGaps`
+  // (shown on the shopping list) — neither asks Corbett anything.
+  const covers = (a, id) => a.ids.some(x => (x.endsWith(':') ? id.startsWith(x) : id === x));
+  const assumptions = (rules.assumptions || []).map(a => ({ ...a, settles: [] }));
+  const priceGaps = [];
+  for (const [id, q] of [...qmap]) {
+    const a = assumptions.find(x => covers(x, id));
+    if (a) { a.settles.push(id); qmap.delete(id); continue; }
+    if (q.type === 'missing_price') { priceGaps.push(q); qmap.delete(id); }
+  }
   const typeOrder = ['scope_conflict', 'missing_dimension', 'construction_detail', 'product_spec', 'missing_price'];
   const unresolved = [...qmap.values()].sort((a, b) => typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type));
+
+  // Shopping rows: drop issues an assumption settled; a row held provisional only by those becomes 'ok (assumed)'.
+  const open = new Set([...qmap.keys(), ...priceGaps.map(q => q.id)]);
+  for (const row of shopping) {
+    const before = row.issues || [];
+    row.issues = before.filter(id => open.has(id));
+    if (before.length && !row.issues.some(id => qmap.has(id)) && row.status === 'provisional') { row.status = 'ok'; row.assumed = true; }
+    if (before.length > row.issues.length) row.assumed = true;
+  }
 
   // Audit trail row → requirements / boards / pieces.
   const reqById = new Map(requirements.map(r => [r.id, r]));
@@ -138,6 +165,7 @@ export function estimateJob(job, { catalog = [], standards = null, scenarioId = 
     rulesHash: fnv1a(JSON.stringify(rules)), rules,
     metrics: take.metrics || {}, requirements, pieces, cutPlans, shopping,
     unresolved, reconciliations, audit,
+    assumptions: assumptions.filter(a => a.settles.length || (ASSUMPTION_APPLIES_TO[a.key] || []).some(t => (view.components || []).some(c => c.type === t && !c.excluded))), priceGaps,
   };
   est.costs = computeCosts(shopping, view, rules);
   est.guides = buildGuides(est, view);
