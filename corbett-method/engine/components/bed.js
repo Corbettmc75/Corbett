@@ -81,7 +81,7 @@ export function takeoff(bed, ctx) {
     const through = throughEdgeAt(v, course) === edgeIdx;
     return cs[v].convex ? (through ? 0 : -WALL_T_IN) : (through ? WALL_T_IN : 0);
   };
-  const startQ = rule === 'interlaced' && job.answers?.['q.interlace-start'] == null && !/confirmed/.test(String(rules.bed.interlaceStartStatus ?? ''))
+  const startQ = rule === 'interlaced' && courses % 2 === 1 && job.answers?.['q.interlace-start'] == null
     ? c.q({ id: 'q.interlace-start', type: 'construction_detail',
         text: `Interlaced corners: does the bottom course start with the long walls running through (${rules.bed.interlaceStart ?? 'long'} assumed)?`,
         provisional: `course 1: ${rules.bed.interlaceStart ?? 'long'} walls run through` })
@@ -174,7 +174,8 @@ export function takeoff(bed, ctx) {
   const connections = wallPieces * 2 + supports * courses * 2;
   const spb = rules.bed.screwsPerBoardEnd;
   const screwQ = c.q({ id: 'q.screw-rule', type: 'construction_detail',
-    text: 'Recorded "3 per 2×6 and 2 to connect to the posts": screws per board end at each post, or per board? Needed for a final 3" screw count.' });
+    text: 'Recorded "3 per 2×6 and 2 to connect to the posts": screws per board end at each post, or per board? Needed for a final 3" screw count.',
+    provisional: 'Corner photo shows 3 face screws per board end at each corner' });
   const pkgQ = 'q.pkg:screw:deck:3in';
   c.req({ productKey: rules.bed.screwKey, role: 'deck-screws', unit: 'ea', workPackage: 'wp2',
     qty: typeof spb === 'number' ? connections * spb : null,

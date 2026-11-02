@@ -152,6 +152,7 @@ function applySettings(target, settings) {
 // Answers to questions that map directly onto a rule path.
 export const ANSWER_TO_RULE = {
   'q.corner-rule': 'bed.cornerRule',
+  'q.interlace-start': 'bed.interlaceStart',
   'q.screw-rule': 'bed.screwsPerBoardEnd',
   'q.liner-lap': 'liner.lapIn',
   'q.staple-spacing': 'liner.stapleSpacingIn',

@@ -351,6 +351,7 @@ export function createServer({ dataDir = process.env.DATA_DIR || join(ROOT, 'var
     baseHeaders(res);
     const url = new URL(req.url, 'http://local');
     const ip = req.socket.remoteAddress || 'unknown';
+    res.on('finish', () => log(`${req.method} ${url.pathname} ${res.statusCode} ${Date.now() - t0}ms`));
     try {
       if (!url.pathname.startsWith('/api/')) {
         if (req.method !== 'GET' && req.method !== 'HEAD') throw new HttpError(405, 'Method not allowed.');
@@ -381,8 +382,6 @@ export function createServer({ dataDir = process.env.DATA_DIR || join(ROOT, 'var
       if (status === 500) log(`error ${req.method} ${url.pathname}: ${redact(e.stack || e.message)}`);
       if (!res.headersSent) sendJson(res, status, { error: message, ...(e.extra || {}) });
       else res.destroy();
-    } finally {
-      res.on('finish', () => log(`${req.method} ${url.pathname} ${res.statusCode} ${Date.now() - t0}ms`));
     }
   });
 
