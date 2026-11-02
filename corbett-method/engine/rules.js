@@ -19,7 +19,9 @@ export const DEFAULT_RULES = {
     courseHeightIn: 5.5,
     heightIn: 27.5,
     wallMaterial: 'cedartone',     // follows proposal/drawing; scenario may override
-    cornerRule: 'nominal',         // 'nominal' (unconfirmed) | 'butt' | 'interlaced'  → q.corner-rule
+    cornerRule: 'interlaced',      // CONFIRMED by Corbett's corner photo (Rodenbostel proposal p4): through-board alternates every course
+    interlaceStart: 'long',        // default: course 1 (bottom) long walls run through; confirm → q.interlace-start
+    // other options kept for special cases: 'nominal' (outside lengths, unverified) | 'butt'
     postEmbedIn: 24,               // confirmed
     postTopBelowBedTopIn: 3.5,     // confirmed
     postGroup: 'lumber:pt:4x4',
@@ -99,7 +101,7 @@ export const DEFAULT_RULES = {
 export const RULE_STATUS = {
   'lumber.kerfIn': 'confirmed', 'lumber.extraAllowancePct': 'confirmed',
   'lumber.endTrimIn': 'default', 'lumber.minUsableOffcutIn': 'default',
-  'bed.cornerRule': 'default', 'bed.postEmbedIn': 'confirmed', 'bed.postTopBelowBedTopIn': 'confirmed',
+  'bed.cornerRule': 'confirmed', 'bed.interlaceStart': 'default', 'bed.postEmbedIn': 'confirmed', 'bed.postTopBelowBedTopIn': 'confirmed',
   'bed.postStockFt': 'confirmed', 'bed.middleSupportOverFt': 'confirmed',
   'concrete.bagsPer6x6': 'confirmed', 'concrete.fourByFoursPerBag': 'confirmed',
   'soil.premiumTopIn': 'confirmed', 'soil.compostSqFtPerBag': 'confirmed',

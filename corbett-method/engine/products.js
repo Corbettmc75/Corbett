@@ -29,6 +29,11 @@ export const PRODUCTS = {
   'plant:karl-foerster':           { name: 'Karl Foerster feather reed grass', category: 'plants', unit: 'ea', packageSize: 1, packageUnit: 'ea' },
   'plant:allium':                  { name: 'Allium', category: 'plants', unit: 'ea', packageSize: 1, packageUnit: 'ea' },
   'plant:quick-fire-hydrangea':    { name: 'Quick Fire hydrangea', category: 'plants', unit: 'ea', packageSize: 1, packageUnit: 'ea' },
+  'mesh:rebar-grid':               { name: 'Basic rebar mesh grid (proposal option; panel size TBD)', category: 'trellis', unit: 'sqft', packageSize: null, packageUnit: 'panel' },
+  'assembly:screen-panel':         { name: "4' custom AC screen panels (lumber list waits on panel detail)", category: 'screens', unit: 'lf', packageSize: null, packageUnit: 'lf' },
+  'assembly:dog-fence':            { name: "4' dog fence matching AC panels (lumber list waits on panel detail)", category: 'screens', unit: 'lf', packageSize: null, packageUnit: 'lf' },
+  'irrigation:system':             { name: 'Irrigation components (layout pending)', category: 'irrigation', unit: 'ea', packageSize: null, packageUnit: 'ea' },
+  'lighting:system':               { name: 'Lighting components (layout pending)', category: 'lighting', unit: 'ea', packageSize: null, packageUnit: 'ea' },
   'disposal:demolition':           { name: 'Demolition disposal / hauling', category: 'disposal', unit: 'load', packageSize: null, packageUnit: 'load' },
 };
 

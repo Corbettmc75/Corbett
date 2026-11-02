@@ -70,7 +70,10 @@ export function takeoff(bed, ctx) {
     const { prevEdge, nextEdge } = cs[v];
     const lp = es[prevEdge].lengthFt, ln = es[nextEdge].lengthFt;
     let through = lp > ln + 1e-9 ? prevEdge : ln > lp + 1e-9 ? nextEdge : Math.min(prevEdge, nextEdge);
-    if (rule === 'interlaced' && course % 2 === 1) through = through === prevEdge ? nextEdge : prevEdge;
+    if (rule === 'interlaced') {
+      const startShort = (rules.bed.interlaceStart ?? 'long') === 'short';
+      if ((course % 2 === 1) !== startShort) through = through === prevEdge ? nextEdge : prevEdge;
+    }
     return through;
   };
   const endAdj = (edgeIdx, v, course) => {
@@ -78,6 +81,11 @@ export function takeoff(bed, ctx) {
     const through = throughEdgeAt(v, course) === edgeIdx;
     return cs[v].convex ? (through ? 0 : -WALL_T_IN) : (through ? WALL_T_IN : 0);
   };
+  const startQ = rule === 'interlaced' && job.answers?.['q.interlace-start'] == null && !/confirmed/.test(String(rules.bed.interlaceStartStatus ?? ''))
+    ? c.q({ id: 'q.interlace-start', type: 'construction_detail',
+        text: `Interlaced corners: does the bottom course start with the long walls running through (${rules.bed.interlaceStart ?? 'long'} assumed)?`,
+        provisional: `course 1: ${rules.bed.interlaceStart ?? 'long'} walls run through` })
+    : null;
   let wallPieces = 0;
   for (const e of es) {
     const nominal = e.lengthFt * 12;
@@ -85,7 +93,7 @@ export function takeoff(bed, ctx) {
       const len = nominal + endAdj(e.index, e.index, k) + endAdj(e.index, (e.index + 1) % es.length, k);
       c.piece({ id: `${bed.id}:wall:e${e.index}:c${k + 1}`, groupKey: wallGroup, lengthIn: len, nominalLengthIn: nominal,
         label: `${bed.name} — wall ${e.index + 1} (${ftIn(nominal)} outside), course ${k + 1}`, role: 'wall',
-        allowanceEligible: true, workPackage: 'wp2', status: cornerQ ? 'provisional' : 'ok', questionIds: cornerQ ? [cornerQ] : [] });
+        allowanceEligible: true, workPackage: 'wp2', status: cornerQ ? 'provisional' : 'ok', questionIds: [cornerQ, startQ].filter(Boolean) });
       wallPieces++;
     }
   }
@@ -185,8 +193,9 @@ export function takeoff(bed, ctx) {
     const segs = Math.max(1, Math.ceil((insidePerimIn - 1e-6) / maxStripIn));
     const laps = segs; // closing lap of the loop + one per extra strip
     const loopIn = insidePerimIn + laps * (lapIn ?? 0);
+    const nSeg = Math.ceil((loopIn - 1e-6) / maxStripIn);
     c.metrics.liner = { stripHeightIn: stripH, insidePerimeterIn: round(insidePerimIn, 3), laps, lapIn, loopLengthIn: round(loopIn, 3),
-      segmentsIn: Array.from({ length: Math.ceil((loopIn - 1e-6) / maxStripIn) }, (_, i, a) => round(i < a.length - 1 ? maxStripIn : loopIn - maxStripIn * (a.length - 1), 3)) };
+      segmentsIn: Array.from({ length: nSeg }, (_, i) => round(i < nSeg - 1 ? maxStripIn : loopIn - maxStripIn * (nSeg - 1), 3)) };
     if (lapIn == null) c.q({ id: 'q.liner-lap', type: 'construction_detail', text: 'Liner lap at strip joints and where each wall loop closes (inches)? Using 0" meanwhile.', provisional: '0" lap' });
     if (!(L.topAllowanceIn > 0) && !(L.bottomAllowanceIn > 0)) c.q({ id: 'q.liner-allowance', type: 'construction_detail', text: 'Liner allowance above/below the 27.5" wall for stapling or tucking (inches)? Using full wall height only.', provisional: 'strip height = wall height' });
 

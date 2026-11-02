@@ -4,8 +4,8 @@ Grouped by kind. The app shows the same questions on the **Questions** tab and k
 open until answered; answers are saved per job (or as shop standards) and survive reanalysis.
 
 ## Construction details (the Method)
-1. **Wall corner/joint rule.** Butt (which wall runs through?) or interlaced (alternate per course)? Until confirmed, wall cuts use nominal outside lengths and the cutting plan is marked unverified.
-2. **Screw rule.** "3 per 2×6 and 2 to connect to the posts" — is that 3 screws per board end at each post, plus 2 at the 2×4 vertical, or something else? (Screw count is withheld until confirmed.)
+1. ~~Wall corner/joint rule~~ — **answered:** interlaced corners, through-board alternates every course (corner photo, Rodenbostel proposal p.4). Remaining detail: on the bottom course, do the long walls or the short walls run through? (Matters only for odd course counts; currently long.)
+2. **Screw rule.** "3 per 2×6 and 2 to connect to the posts" — the corner photo shows 3 face screws per board end at each corner. Are the "2 to connect to the posts" per board at each 4×4 post, and what goes into the opposing vertical 2×4? (Screw count is withheld until confirmed.)
 3. **Bed post exact fit.** Posts are 24 + 27.5 − 3.5 = 48". Two 48" posts need 96.125" with kerf, so each 8' PT 4×4 yields one post. Accept that, or shorten embedment by ⅛" so one board gives two?
 4. **Long-run supports.** Support layout for the 20' center bed and both L beds (count and placement; whether the middle trellis post counts as a support). Provisional count assumes ≤ 5' spans.
 5. **Opposing vertical 2×4 length** (currently bed height − 3.5").
