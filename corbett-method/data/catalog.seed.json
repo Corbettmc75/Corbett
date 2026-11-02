@@ -1,0 +1,902 @@
+[
+  {
+    "id": "menards-20260219-cedartone-2x6-8",
+    "productKey": "lumber:cedartone:2x6:8",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "CedarTone 2×6 × 8'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 1119,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-cedartone-2x6-10",
+    "productKey": "lumber:cedartone:2x6:10",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "CedarTone 2×6 × 10'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 1409,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-cedartone-2x6-12",
+    "productKey": "lumber:cedartone:2x6:12",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "CedarTone 2×6 × 12'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 1619,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-cedartone-2x6-16",
+    "productKey": "lumber:cedartone:2x6:16",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "CedarTone 2×6 × 16'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 2229,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-smooth-cedar-2x6-8",
+    "productKey": "lumber:smooth-cedar:2x6:8",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Smooth cedar 2×6 × 8'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 2438,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-smooth-cedar-2x6-10",
+    "productKey": "lumber:smooth-cedar:2x6:10",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Smooth cedar 2×6 × 10'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 3018,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-smooth-cedar-2x6-12",
+    "productKey": "lumber:smooth-cedar:2x6:12",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Smooth cedar 2×6 × 12'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 3648,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-smooth-cedar-2x6-16",
+    "productKey": "lumber:smooth-cedar:2x6:16",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Smooth cedar 2×6 × 16'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 4998,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-rough-cedar-2x6-8",
+    "productKey": "lumber:rough-cedar:2x6:8",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Rough-sawn cedar 2×6 × 8'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 2588,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-rough-cedar-2x6-10",
+    "productKey": "lumber:rough-cedar:2x6:10",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Rough-sawn cedar 2×6 × 10'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 3248,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-rough-cedar-2x6-12",
+    "productKey": "lumber:rough-cedar:2x6:12",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Rough-sawn cedar 2×6 × 12'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 3889,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-rough-cedar-2x6-16",
+    "productKey": "lumber:rough-cedar:2x6:16",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Rough-sawn cedar 2×6 × 16'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 5194,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-cedartone-6x6-8",
+    "productKey": "lumber:cedartone:6x6:8",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "CedarTone 6×6 × 8'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 4089,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-cedartone-6x6-10",
+    "productKey": "lumber:cedartone:6x6:10",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "CedarTone 6×6 × 10'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 4939,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-cedartone-6x6-12",
+    "productKey": "lumber:cedartone:6x6:12",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "CedarTone 6×6 × 12'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 5949,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-smooth-cedar-6x6-8",
+    "productKey": "lumber:smooth-cedar:6x6:8",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Smooth cedar 6×6 × 8'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 17999,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-smooth-cedar-6x6-10",
+    "productKey": "lumber:smooth-cedar:6x6:10",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Smooth cedar 6×6 × 10'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 22499,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-smooth-cedar-6x6-12",
+    "productKey": "lumber:smooth-cedar:6x6:12",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Smooth cedar 6×6 × 12'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 26999,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-rough-cedar-6x6-8",
+    "productKey": "lumber:rough-cedar:6x6:8",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Rough-sawn cedar 6×6 × 8'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 14999,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-rough-cedar-6x6-10",
+    "productKey": "lumber:rough-cedar:6x6:10",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Rough-sawn cedar 6×6 × 10'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 16679,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-rough-cedar-6x6-12",
+    "productKey": "lumber:rough-cedar:6x6:12",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Rough-sawn cedar 6×6 × 12'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 23999,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-cedartone-2x12-8",
+    "productKey": "lumber:cedartone:2x12:8",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "CedarTone 2×12 × 8'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 2229,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-cedartone-2x12-10",
+    "productKey": "lumber:cedartone:2x12:10",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "CedarTone 2×12 × 10'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 2749,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-cedartone-2x12-12",
+    "productKey": "lumber:cedartone:2x12:12",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "CedarTone 2×12 × 12'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 3839,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-cedartone-2x12-16",
+    "productKey": "lumber:cedartone:2x12:16",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "CedarTone 2×12 × 16'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 4509,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-cedartone-2x12-20",
+    "productKey": "lumber:cedartone:2x12:20",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "CedarTone 2×12 × 20'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 7499,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": "20-ft: special order"
+  },
+  {
+    "id": "menards-20260219-smooth-cedar-2x12-8",
+    "productKey": "lumber:smooth-cedar:2x12:8",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Smooth cedar 2×12 × 8'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 12379,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-smooth-cedar-2x12-12",
+    "productKey": "lumber:smooth-cedar:2x12:12",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Smooth cedar 2×12 × 12'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 18564,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-smooth-cedar-2x12-16",
+    "productKey": "lumber:smooth-cedar:2x12:16",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Smooth cedar 2×12 × 16'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 24448,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-smooth-cedar-2x12-20",
+    "productKey": "lumber:smooth-cedar:2x12:20",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Smooth cedar 2×12 × 20'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 33339,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": "20-ft: special order"
+  },
+  {
+    "id": "menards-20260219-rough-cedar-2x12-8",
+    "productKey": "lumber:rough-cedar:2x12:8",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Rough-sawn cedar 2×12 × 8'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 11599,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-rough-cedar-2x12-12",
+    "productKey": "lumber:rough-cedar:2x12:12",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Rough-sawn cedar 2×12 × 12'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 16798,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-rough-cedar-2x12-16",
+    "productKey": "lumber:rough-cedar:2x12:16",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Rough-sawn cedar 2×12 × 16'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 22800,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-rough-cedar-2x12-20",
+    "productKey": "lumber:rough-cedar:2x12:20",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Rough-sawn cedar 2×12 × 20'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 29999,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": "20-ft: special order"
+  },
+  {
+    "id": "menards-20260219-cedartone-4x4-8",
+    "productKey": "lumber:cedartone:4x4:8",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "CedarTone 4×4 × 8'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 1679,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-cedartone-4x4-10",
+    "productKey": "lumber:cedartone:4x4:10",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "CedarTone 4×4 × 10'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 2059,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-cedartone-4x4-12",
+    "productKey": "lumber:cedartone:4x4:12",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "CedarTone 4×4 × 12'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 2429,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-smooth-cedar-4x4-8",
+    "productKey": "lumber:smooth-cedar:4x4:8",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Smooth cedar 4×4 × 8'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 4028,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-smooth-cedar-4x4-10",
+    "productKey": "lumber:smooth-cedar:4x4:10",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Smooth cedar 4×4 × 10'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 5038,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-smooth-cedar-4x4-12",
+    "productKey": "lumber:smooth-cedar:4x4:12",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Smooth cedar 4×4 × 12'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 6059,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-rough-cedar-4x4-8",
+    "productKey": "lumber:rough-cedar:4x4:8",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Rough-sawn cedar 4×4 × 8'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 4199,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-rough-cedar-4x4-10",
+    "productKey": "lumber:rough-cedar:4x4:10",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Rough-sawn cedar 4×4 × 10'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 5259,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "menards-20260219-rough-cedar-4x4-12",
+    "productKey": "lumber:rough-cedar:4x4:12",
+    "supplier": "Menards",
+    "store": "Naperville",
+    "sku": null,
+    "spec": "Rough-sawn cedar 4×4 × 12'",
+    "packageSize": 1,
+    "packageUnit": "board",
+    "unitPriceCents": 6299,
+    "unitBasis": "board",
+    "priceDate": "2026-02-19",
+    "source": {
+      "file": "Menards price sheet, Naperville, dated 2026-02-19 (values supplied in project brief)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "material",
+    "notes": ""
+  },
+  {
+    "id": "greenworks-2025-soil",
+    "productKey": "service:soil-install",
+    "supplier": "Greenworks",
+    "store": null,
+    "sku": null,
+    "spec": "Soil — Greenworks column",
+    "packageSize": 1,
+    "packageUnit": "cy",
+    "unitPriceCents": 12500,
+    "unitBasis": "cy",
+    "priceDate": "2025",
+    "source": {
+      "file": "GreenworksRates_2025 (screenshot; only soil rates were legible/supplied)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "service",
+    "notes": "Contractor/service rate — NOT a raw material purchase price"
+  },
+  {
+    "id": "greenworks-2025-soil-hgg",
+    "productKey": "service:soil-install",
+    "supplier": "Greenworks (HGG column)",
+    "store": null,
+    "sku": null,
+    "spec": "Soil — HGG column",
+    "packageSize": 1,
+    "packageUnit": "cy",
+    "unitPriceCents": 15000,
+    "unitBasis": "cy",
+    "priceDate": "2025",
+    "source": {
+      "file": "GreenworksRates_2025 (screenshot; only soil rates were legible/supplied)",
+      "page": null,
+      "url": null
+    },
+    "priceType": "service",
+    "notes": "Service/selling-side rate — NOT a raw material purchase price"
+  }
+]

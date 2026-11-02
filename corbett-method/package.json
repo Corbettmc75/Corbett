@@ -1,0 +1,14 @@
+{
+  "name": "corbett-method",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The Corbett Method — landscape estimating, purchasing and cutting plans",
+  "type": "module",
+  "engines": { "node": ">=22.5" },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server/index.js",
+    "test": "node --disable-warning=ExperimentalWarning --test test/",
+    "seed": "node --disable-warning=ExperimentalWarning scripts/seed.mjs",
+    "user:add": "node --disable-warning=ExperimentalWarning scripts/user-add.mjs"
+  }
+}
