@@ -76,13 +76,19 @@ export function consolidate({ requirements = [], cutPlans = {}, rules = {}, piec
   for (const [groupKey, plans] of Object.entries(cutPlans)) {
     const plan = plans.reviewed;
     const byKey = new Map();
+    // Boards carrying ONLY provisional pieces (e.g. unconfirmed brace counts) form their own row,
+    // so a provisional quantity never inflates a confirmed count (7 trellis posts stay 7).
+    const allProv = b => b.cuts.length > 0 && b.cuts.every(c => pieceById.get(c.pieceId)?.status === 'provisional');
     for (const b of plan.boards) {
-      if (!byKey.has(b.productKey)) byKey.set(b.productKey, []);
-      byKey.get(b.productKey).push(b);
+      const k = allProv(b) ? `${b.productKey}|provisional` : b.productKey;
+      if (!byKey.has(k)) byKey.set(k, []);
+      byKey.get(k).push(b);
     }
     const nominalCount = new Map();
     for (const b of plans.nominal?.boards || []) nominalCount.set(b.productKey, (nominalCount.get(b.productKey) || 0) + 1);
-    for (const [productKey, boards] of [...byKey.entries()].sort((a, b) => b[0].localeCompare(a[0], undefined, { numeric: true }))) {
+    for (const [rowKey, boards] of [...byKey.entries()].sort((a, b) => b[0].localeCompare(a[0], undefined, { numeric: true }))) {
+      const productKey = rowKey.split('|')[0];
+      const provisionalOnly = rowKey.endsWith('|provisional');
       const info = productInfo(productKey);
       // Special-order boards are bought only for required continuous runs — never as spare allowance.
       const eligible = boards.filter(b => !b.specialOrder && b.cuts.every(c => c.allowanceEligible !== false)).length;
@@ -97,10 +103,13 @@ export function consolidate({ requirements = [], cutPlans = {}, rules = {}, piec
       if (roles.size > 1) notes.push(`Boards: ${[...roles].map(([r, n]) => `${n} for ${r}`).join(', ')}.`);
       if (boards.some(b => b.specialOrder) && pct > 0) notes.push('No extra allowance on special-order boards.');
       if (allowanceQty) notes.push(`Extra ${pct}% lumber allowance on ${eligible} eligible board(s); trellis posts, headers and braces are not inflated.`);
+      if (provisionalOnly) notes.unshift('Provisional boards — bought only once the open question is answered; kept separate from confirmed quantities.');
       rows.push({
-        productKey, name: info.name, category: 'lumber', groupKey,
+        rowId: rowKey, productKey, provisionalOnly,
+        name: provisionalOnly ? `${info.name} — provisional (${[...roles.keys()].join(', ')})` : info.name,
+        category: 'lumber', groupKey,
         baseQty: boards.length, allowanceQty, totalQty: boards.length + allowanceQty, unit: 'board',
-        nominalQty: nominalCount.get(productKey) ?? 0,
+        nominalQty: provisionalOnly ? null : (nominalCount.get(productKey) ?? 0),
         packageSize: 1, packageUnit: 'board', specialOrder: !!info.specialOrder,
         status: provisional ? 'provisional' : 'ok', issues: qids, notes,
         requirementIds: [], boardIds: boards.map(b => b.id), pieceIds,

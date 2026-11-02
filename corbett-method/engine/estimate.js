@@ -121,7 +121,7 @@ export function estimateJob(job, { catalog = [], standards = null, scenarioId = 
   const reqById = new Map(requirements.map(r => [r.id, r]));
   const pieceById = new Map(pieces.map(p => [p.id, p]));
   const audit = shopping.map(row => ({
-    productKey: row.productKey, rowQty: row.totalQty,
+    rowId: row.rowId || row.productKey, productKey: row.productKey, rowQty: row.totalQty,
     from: [
       ...(row.requirementIds || []).map(id => { const r = reqById.get(id); return r && { requirementId: id, componentId: r.componentId, qty: r.qty, unit: r.unit, basis: r.basis, ref: (r.refs || []).join('; '), formula: r.formula }; }),
       ...(row.boardIds || []).map(bid => {

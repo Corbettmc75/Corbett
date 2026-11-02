@@ -9,7 +9,7 @@ import seed from '../data/theresa-anders.seed.js';
 const catalog = JSON.parse(readFileSync(new URL('../data/catalog.seed.json', import.meta.url)));
 const OPTS = { catalog, generatedAt: 'fixed' };
 const est = estimateJob(seed, OPTS);
-const row = key => est.shopping.find(r => r.productKey === key);
+const row = key => est.shopping.find(r => r.productKey === key && !r.provisionalOnly);
 const rows = prefix => est.shopping.filter(r => r.productKey.startsWith(prefix));
 
 test('seven installed 6×6 trellis posts → seven post boards, no 15% inflation', () => {
@@ -20,6 +20,10 @@ test('seven installed 6×6 trellis posts → seven post boards, no 15% inflation
   for (const r of rows('lumber:cedartone:6x6')) assert.equal(r.allowanceQty, 0);
   const posts = est.pieces.filter(p => p.role === 'trellis-post');
   assert.equal(posts.length, 7);
+  // The confirmed 6×6×12 shopping row reads exactly 7; provisional brace boards live in a separate row.
+  assert.equal(row('lumber:cedartone:6x6:12').totalQty, 7);
+  const prov = est.shopping.filter(r => r.provisionalOnly && r.groupKey === 'lumber:cedartone:6x6');
+  assert.ok(prov.every(r => r.status === 'provisional' && r.allowanceQty === 0));
 });
 
 test('headers: exactly four 12\' and two 20\' 2×12, no 8\' header allowance', () => {
@@ -106,10 +110,9 @@ test('shopping list, CSV export and daily supplies agree', () => {
   assert.equal(csv.length, est.shopping.length);
   const supplyTotals = new Map();
   for (const g of est.guides) for (const s of g.supplies) supplyTotals.set(s.productKey, s.qty == null ? null : (supplyTotals.get(s.productKey) ?? 0) + s.qty);
-  for (const r of est.shopping) {
-    if (r.totalQty == null) continue;
-    assert.ok(Math.abs((supplyTotals.get(r.productKey) ?? -1) - r.totalQty) < 1e-9, `guides vs shopping for ${r.productKey}`);
-  }
+  const shopTotals = new Map();
+  for (const r of est.shopping) if (r.totalQty != null) shopTotals.set(r.productKey, (shopTotals.get(r.productKey) ?? 0) + r.totalQty);
+  for (const [k, q] of shopTotals) assert.ok(Math.abs((supplyTotals.get(k) ?? -1) - q) < 1e-9, `guides vs shopping for ${k}`);
   assert.ok(csv.some(l => l.includes('8.5')));
   assert.ok(cutListCsv(est).includes('B-2x12-'));
   const html = jobPackHtml(est, seed);

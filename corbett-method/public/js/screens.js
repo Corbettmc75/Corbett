@@ -134,15 +134,23 @@ export async function uploadScreen(jobId) {
 
 // ---------------- Review ----------------
 function normalizeProposal(p) {
-  if (!p) return { items: [], questions: [], notes: [] };
-  let items = p.items;
-  if (!items) {
-    items = [];
-    for (const c of p.components || []) items.push({ id: c.id, kind: 'component', component: c, basis: c.provenance?.geometry?.basis || 'drawing', ref: c.provenance?.geometry?.ref });
-    for (const s of p.scope || []) items.push({ id: s.id, kind: 'scope', label: s.label || s.text, value: s.value, basis: 'drawing', ref: s.ref });
-    for (const n of p.notes || []) if (typeof n === 'object' && n.id) items.push({ id: n.id, kind: 'note', label: n.text || n.label, basis: 'drawing', ref: n.ref });
+  if (!p) return { items: [], questions: [], notes: [], project: {}, warnings: [] };
+  const sum = p.summary || {};
+  const items = [], questions = [];
+  for (const it of p.items || []) {
+    const d = it.data || {};
+    const conf = typeof it.confidence === 'number' ? (it.confidence < 0.6 ? 'low' : 'ok') : it.confidence;
+    if (it.kind === 'component') items.push({ id: it.itemId, kind: 'component', confidence: conf,
+      component: { id: it.itemId, type: d.type, name: d.name, geometry: d.geometry, props: d.props || {}, provenance: d.provenance || {}, notes: d.notes || '' },
+      basis: d.provenance?.geometry?.basis || 'drawing',
+      ref: (d.dimensionLabels || []).map(l => l.describes ? `${l.text} (${l.describes})` : l.text).join('; ') || null });
+    else if (it.kind === 'question') questions.push({ id: it.itemId, type: d.type, text: d.text });
+    else items.push({ id: it.itemId, kind: it.kind === 'exclusion' ? 'scope' : 'note', label: d.text, basis: 'drawing', dimension: !!d.dimension });
   }
-  return { items, questions: p.questions || [], notes: (p.notes || []).filter(n => typeof n === 'string'), project: p.project || {}, warnings: p.warnings || [] };
+  const warnings = [];
+  if (sum.message) warnings.push(sum.message);
+  if (sum.rotationNote) warnings.push(`Rotation: ${sum.rotationNote}`);
+  return { items, questions, project: { name: sum.projectName, revision: sum.revision, date: sum.drawingDate, source: sum.source }, warnings };
 }
 
 function geomSummary(g) {
@@ -170,7 +178,7 @@ export async function reviewScreen(jobId, eid) {
     if (!e) return c;
     const out = structuredClone(c);
     if (e.name) out.name = e.name;
-    if (e.geometry) out.geometry = { ...out.geometry, ...e.geometry };
+    if (e.geometry) out.geometry = e.geometry;
     return out;
   }
   function itemCard(it) {
@@ -215,7 +223,7 @@ export async function reviewScreen(jobId, eid) {
       h('div', { class: 'stack' },
         h('button', { class: 'btn primary', onclick: () => {
           const ge = {}; for (const [k, el] of Object.entries(inputs)) ge[k] = el.value === '' ? null : Number(el.value);
-          edits[it.id] = { name: nameIn.value.trim() || c.name, ...(Object.keys(ge).length ? { geometry: ge } : {}) };
+          edits[it.id] = { name: nameIn.value.trim() || c.name, ...(Object.keys(ge).length ? { geometry: { ...(it.component.geometry || {}), kind: g.kind, ...ge } } : {}) };
           dlg.close(); done(); redraw();
         } }, 'Save correction'),
         h('button', { class: 'btn', onclick: () => dlg.close() }, 'Cancel')));
@@ -225,25 +233,31 @@ export async function reviewScreen(jobId, eid) {
   const applyBtn = h('button', { class: 'btn primary block big', onclick: async () => {
     applyBtn.disabled = true; applyBtn.textContent = 'Applying…';
     try {
-      const accept = [...decisions].filter(([, d]) => d !== 'reject').map(([id]) => id);
-      await api.post(`/api/jobs/${encodeURIComponent(jobId)}/extractions/${encodeURIComponent(eid)}/apply`, { accept, edits });
+      const accept = [...decisions].filter(([, d]) => d !== 'reject').map(([id]) => id).concat(prop.questions.map(q => q.id));
+      const cur = await api.get(`/api/jobs/${encodeURIComponent(jobId)}`);
+      await api.request('POST', `/api/jobs/${encodeURIComponent(jobId)}/extractions/${encodeURIComponent(eid)}/apply`, { accept, edits, version: cur.version }, { 'If-Match': String(cur.version) });
       toast('Drawing applied. Confirmed corrections were kept.');
       go(`#/job/${encodeURIComponent(jobId)}/summary`);
     } catch (e) { toast(e.message, 'error'); applyBtn.disabled = false; applyBtn.textContent = 'Apply to job'; }
   } }, 'Apply to job');
 
   const groups = {};
-  for (const it of prop.items) { const t = it.component ? (TYPE_LABEL[it.component.type] || it.component.type) : (it.kind === 'scope' ? 'Scope' : 'Notes'); (groups[t] ||= []).push(it); }
+  const dimNotes = prop.items.filter(it => it.dimension);
+  for (const it of prop.items) { if (it.dimension) continue; const t = it.component ? (TYPE_LABEL[it.component.type] || it.component.type) : (it.kind === 'scope' ? 'Scope & exclusions' : 'Notes'); (groups[t] ||= []).push(it); }
 
   return h('div', null, topBar('Review drawing', { back: `#/job/${encodeURIComponent(jobId)}/summary` }),
     h('main', { class: 'page' },
       h('div', { class: 'card' },
         h('h2', null, prop.project.name || 'What we read'),
-        prop.project.revision ? h('div', { class: 'muted' }, `Revision: ${prop.project.revision}`) : null,
+        prop.project.revision ? h('div', { class: 'muted' }, `Revision: ${prop.project.revision}${prop.project.date ? ' · ' + prop.project.date : ''}`) : null,
+        prop.project.source === 'text-layer' ? h('div', { class: 'small warnline' }, 'Read from the PDF text only (AI analysis not available) — shapes need your review.') : null,
         planHost,
         h('p', { class: 'hint' }, `${prop.items.length} items found. Tap Reject on anything wrong, Edit to correct a number.`)),
       prop.warnings.length ? h('div', { class: 'card warn' }, prop.warnings.map(w => h('p', null, w))) : null,
       Object.entries(groups).map(([t, its]) => h('section', null, h('h3', { class: 'sechead' }, t), its.map(itemCard))),
+      dimNotes.length ? h('details', { class: 'card section' }, h('summary', null, h('strong', null, `${dimNotes.length} other dimension labels read`)),
+        h('p', { class: 'hint' }, 'Kept with the job for reference. Not used for quantities unless attached to a component.'),
+        h('ul', { class: 'plain small' }, dimNotes.map(d => h('li', null, d.label)))) : null,
       prop.questions.length ? h('section', null, h('h3', { class: 'sechead' }, 'Needs your answer later'),
         h('div', { class: 'card' }, h('ul', { class: 'qlist' }, prop.questions.map(q => h('li', null, h('span', { class: 'chip qtype' }, QTYPE[q.type] || q.type), ' ', q.text))))) : null,
       h('div', { class: 'sticky-actions' }, applyBtn)));

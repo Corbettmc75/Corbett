@@ -438,8 +438,9 @@ function scenariosSection() {
 }
 async function settingsSection() {
   let std = {}; try { std = await api.get('/api/standards'); } catch {}
-  const base = std.rules || std.effective || std.defaults || std.settings || {};
-  const dget = (o, p) => p.split('.').reduce((a, k) => a?.[k], o);
+  const raw = std.rules || std.effective || std.defaults || std.settings || {};
+  const dget = (o, p) => o?.[p] ?? p.split('.').reduce((a, k) => a?.[k], o);
+  const base = raw;
   const cur = (k) => store.job.settings?.[k] ?? dget(store.job.settings || {}, k);
   const set = (k, v) => edit(job => { job.settings = job.settings || {}; if (v === null || v === '') delete job.settings[k]; else job.settings[k] = v; });
   const numSet = (k, label, unit) => {
@@ -560,14 +561,18 @@ function actualsSection() {
 async function revisionsSection(id) {
   const r = await api.get(`/api/jobs/${enc(id)}/revisions`);
   const revs = Array.isArray(r) ? r : (r.revisions || []);
-  return h('ul', { class: 'plain' }, revs.slice().reverse().map(v => h('li', { class: 'item small' }, h('strong', null, `v${v.version}`), ` · ${when(v.updatedAt || v.at)} · ${v.updatedBy || v.by || ''}`, v.summary ? h('div', { class: 'muted' }, v.summary) : null)));
+  return h('ul', { class: 'plain' }, revs.slice().sort((a, b) => b.version - a.version).map(v => h('li', { class: 'item small' }, h('strong', null, `v${v.version}`), ` · ${when(v.created_at || v.createdAt || v.updatedAt)} · ${v.author || v.updatedBy || ''}`, v.summary ? h('div', { class: 'muted' }, v.summary) : null)));
+}
+function detailText(d) {
+  if (typeof d === 'string') return d;
+  return Object.entries(d).filter(([, v]) => v !== null && typeof v !== 'object').map(([k, v]) => `${k}: ${v}`).join(' · ');
 }
 async function auditSection(id) {
   const r = await api.get(`/api/jobs/${enc(id)}/audit`).catch(() => null);
   const entries = r ? (Array.isArray(r) ? r : (r.entries || r.audit || [])) : [];
   const e = store.estimate;
   return h('div', null,
-    entries.length ? h('ul', { class: 'plain' }, entries.slice(-100).reverse().map(x => h('li', { class: 'item small' }, `${when(x.at)} · ${x.by || x.user || ''} · ${x.action || ''} ${typeof x.detail === 'string' ? x.detail : ''}`))) : h('div', { class: 'muted' }, 'No activity log yet.'),
+    entries.length ? h('ul', { class: 'plain' }, entries.slice(0, 100).map(x => h('li', { class: 'item small' }, `${when(x.at)} · ${x.username || x.by || ''} · ${(x.action || '').replace(/-/g, ' ')}`, x.detail ? h('div', { class: 'muted' }, detailText(x.detail)) : null))) : h('div', { class: 'muted' }, 'No activity log yet.'),
     e?.audit?.length ? h('div', null, h('h4', null, 'Shopping quantities → sources'), e.audit.map(a => h('details', { class: 'why' }, h('summary', null, `${lumberLabel(a.productKey) || a.productKey}: ${num(a.rowQty)}`),
       h('ul', null, (a.from || []).map(f => h('li', null, f.componentId ? `${compName(f.componentId)}: ` : '', f.formula || f.ref || '', ' ', f.basis ? `(${BASIS[f.basis] || f.basis})` : '')))))) : null);
 }

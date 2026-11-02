@@ -70,7 +70,10 @@ export async function handle(method, path, body) {
   if (p === `/api/jobs/${job.id}` && method === 'PUT') { Object.assign(job, body.job); version++; return { version }; }
   if (p.endsWith('/estimate')) return estimate();
   if (p.endsWith('/analyze')) { extractionPolls = 0; return { extractionId: 'ex1' }; }
-  if (p === '/api/extractions/ex1') { extractionPolls++; return extractionPolls < 3 ? { status: 'running', stage: 'extracting', progress: extractionPolls / 3 } : { status: 'done', proposal: { project: { name: "Theresa's Garden & Backyard Oasis", revision: '9/18/26' }, components: job.components.slice(0, 6), questions: estimate().unresolved.slice(0, 2) } }; }
+  if (p === '/api/extractions/ex1') { extractionPolls++; return extractionPolls < 3 ? { status: 'running', stage: 'extracting', progress: extractionPolls / 3 } : { status: 'done', proposal: { summary: { projectName: "Theresa's Garden & Backyard Oasis", revision: '9/18/26', source: 'ai' },
+      items: [...job.components.slice(0, 6).map(c => ({ itemId: 'c-' + c.id, kind: 'component', confidence: c.id === 'bed-lower' ? 0.4 : 0.9, data: { type: c.type, name: c.name, geometry: c.geometry, provenance: c.provenance || {}, dimensionLabels: [{ text: "12'", describes: 'overall depth' }] } })),
+        { itemId: 'e-1', kind: 'exclusion', data: { text: 'NO irrigation or lighting' } }, { itemId: 'n-1', kind: 'note', data: { text: 'Dimension label "24\'4\""', dimension: { text: "24'4\"" } } },
+        ...estimate().unresolved.slice(0, 2).map(q => ({ itemId: 'q-' + q.id, kind: 'question', data: { type: q.type, text: q.text } }))] } }; }
   if (p.includes('/apply')) return { version };
   if (p === '/api/catalog' && method === 'GET') return [{ id: 'c1', productKey: 'lumber:cedartone:6x6:12', supplier: 'Menards', store: 'Naperville', spec: 'CedarTone 6×6 × 12\'', packageSize: 1, packageUnit: 'board', unitPriceCents: 5949, unitBasis: 'board', priceDate: '2026-02-19', priceType: 'material', source: { file: 'Menards sheet 2026-02-19' } },
     { id: 'c2', productKey: 'service:soil-install', supplier: 'Greenworks', spec: 'Soil — Greenworks column', unitPriceCents: 12500, unitBasis: 'cy', priceDate: '2025', priceType: 'service', notes: 'Service rate — not a material price', source: { file: 'GreenworksRates_2025' } }];
