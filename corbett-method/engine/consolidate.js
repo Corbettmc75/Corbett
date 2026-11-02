@@ -18,7 +18,7 @@ export function stockForGroup(groupKey, catalog = []) {
 }
 
 /** Optimize every lumber pool. Returns { cutPlans: {groupKey:{reviewed, nominal}}, questions }. */
-export function planLumber(pieces = [], rules, catalog = [], { timeLimitMs = 1500 } = {}) {
+export function planLumber(pieces = [], rules, catalog = [], { timeLimitMs = 10000, nodeLimit = 150000 } = {}) {
   const L = rules?.lumber || {};
   const byGroup = new Map();
   for (const p of pieces) {
@@ -36,7 +36,7 @@ export function planLumber(pieces = [], rules, catalog = [], { timeLimitMs = 150
       cutPlans[groupKey] = { reviewed: { groupKey, mode: 'reviewed', boards: [], infeasible: ps.map(p => ({ pieceId: p.id, label: p.label, reason: 'Unknown lumber product' })), conflicts: [], proof: 'best-found', notes: [], stats: {} }, nominal: null };
       continue;
     }
-    const common = { groupKey, pieces: ps, stock, kerfIn: L.kerfIn ?? 0.125, endTrimIn: L.endTrimIn ?? 0,
+    const common = { groupKey, pieces: ps, stock, nodeLimit, kerfIn: L.kerfIn ?? 0.125, endTrimIn: L.endTrimIn ?? 0,
       minUsableOffcutIn: L.minUsableOffcutIn ?? 12, objective: L.objective || 'waste', timeLimitMs,
       stockToleranceIn: L.stockLengthToleranceIn ?? 0 };
     const reviewed = optimizeGroup({ ...common, mode: 'reviewed' });
@@ -84,13 +84,18 @@ export function consolidate({ requirements = [], cutPlans = {}, rules = {}, piec
     for (const b of plans.nominal?.boards || []) nominalCount.set(b.productKey, (nominalCount.get(b.productKey) || 0) + 1);
     for (const [productKey, boards] of [...byKey.entries()].sort((a, b) => b[0].localeCompare(a[0], undefined, { numeric: true }))) {
       const info = productInfo(productKey);
-      const eligible = boards.filter(b => b.cuts.every(c => c.allowanceEligible !== false)).length;
+      // Special-order boards are bought only for required continuous runs — never as spare allowance.
+      const eligible = boards.filter(b => !b.specialOrder && b.cuts.every(c => c.allowanceEligible !== false)).length;
       const allowanceQty = pct > 0 && eligible > 0 ? Math.ceil(eligible * pct / 100 - 1e-9) : 0;
       const pieceIds = boards.flatMap(b => b.cuts.map(c => c.pieceId));
       const qids = [...new Set(pieceIds.flatMap(id => pieceById.get(id)?.questionIds || []))];
       const provisional = pieceIds.some(id => pieceById.get(id)?.status === 'provisional');
       const notes = [];
       if (boards.some(b => b.specialOrder)) notes.push(`Special order: ${boards.filter(b => b.specialOrder).map(b => b.reason).filter(Boolean).join('; ')}`);
+      const roles = new Map();
+      for (const b of boards) { const r = [...new Set(b.cuts.map(c => pieceById.get(c.pieceId)?.role || 'piece'))].join(' + '); roles.set(r, (roles.get(r) || 0) + 1); }
+      if (roles.size > 1) notes.push(`Boards: ${[...roles].map(([r, n]) => `${n} for ${r}`).join(', ')}.`);
+      if (boards.some(b => b.specialOrder) && pct > 0) notes.push('No extra allowance on special-order boards.');
       if (allowanceQty) notes.push(`Extra ${pct}% lumber allowance on ${eligible} eligible board(s); trellis posts, headers and braces are not inflated.`);
       rows.push({
         productKey, name: info.name, category: 'lumber', groupKey,
@@ -131,7 +136,9 @@ export function consolidate({ requirements = [], cutPlans = {}, rules = {}, piec
   }
   for (const [key, reqs] of groups) {
     const [productKey, unit] = key.split('|');
-    const info = productInfo(productKey);
+    const info = { ...productInfo(productKey) };
+    const gk = /^lumber:[^:]+:[^:]+$/.test(productKey) ? productKey : null;
+    if (gk && LUMBER_GROUPS[gk]) info.name = `${LUMBER_GROUPS[gk].label} (stock length not yet determined)`;
     const issues = [...new Set(reqs.flatMap(r => r.questionIds || []))];
     const notes = [];
     let status = 'ok';

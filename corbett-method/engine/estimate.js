@@ -52,7 +52,7 @@ export function effectiveJob(job, scenarioId = null) {
   return { job: j, scenario: scen };
 }
 
-export function estimateJob(job, { catalog = [], standards = null, scenarioId = null, generatedAt = null, timeLimitMs = 1500 } = {}) {
+export function estimateJob(job, { catalog = [], standards = null, scenarioId = null, generatedAt = null, timeLimitMs = 10000, nodeLimit = 150000 } = {}) {
   const { job: view, scenario } = effectiveJob(job, scenarioId);
   const rules = resolveRules(view, scenario?.id ?? null, standards);
   const take = buildTakeoff(view, rules) || {};
@@ -87,13 +87,19 @@ export function estimateJob(job, { catalog = [], standards = null, scenarioId = 
     }
   }
 
-  const { cutPlans, questions: lq } = planLumber(pieces, rules, catalog, { timeLimitMs });
+  const { cutPlans, questions: lq } = planLumber(pieces, rules, catalog, { timeLimitMs, nodeLimit });
   const { rows: unpriced, questions: cq } = consolidate({ requirements, cutPlans, rules, pieces });
   const { rows: shopping, questions: pq } = priceRows(unpriced, catalog);
+  // Exact-fit conflicts become questions only for stock-restricted pieces (e.g. PT posts from 8' only),
+  // where the restriction forces the waste. Others stay visible in the cutting guide.
+  const pieceMap = new Map(pieces.map(p => [p.id, p]));
   for (const [gk, plans] of Object.entries(cutPlans)) {
-    for (const c of plans.reviewed.conflicts || []) {
-      questions.push({ id: `q.exact-fit:${gk}:${c.pieceIds.length}:${c.text.slice(0, 24)}`, type: 'construction_detail',
-        text: `${c.text} ${c.suggestion}`, componentIds: [], productKeys: [], provisional: 'Planned with kerf (no exact-fit pairs).', status: 'open' });
+    const restricted = (plans.reviewed.conflicts || []).filter(c => c.pieceIds.every(id => pieceMap.get(id)?.allowedStockFt?.length));
+    if (restricted.length) {
+      questions.push({ id: `q.exact-fit:${gk}`, type: 'construction_detail',
+        text: restricted.map(c => `${c.text} ${c.suggestion}`).join(' '),
+        componentIds: [...new Set(restricted.flatMap(c => c.pieceIds.map(id => pieceMap.get(id)?.componentId)).filter(Boolean))],
+        productKeys: [], provisional: 'Planned with kerf: one piece per board where they cannot pair.', status: 'open' });
     }
   }
 

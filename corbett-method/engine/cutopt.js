@@ -42,7 +42,7 @@ function round3(x) { return Math.round(x * 1000) / 1000; }
  */
 export function optimizeGroup({
   groupKey, pieces = [], stock = [], kerfIn = 0.125, endTrimIn = 0, minUsableOffcutIn = 12,
-  objective = 'waste', mode = 'reviewed', timeLimitMs = 1500, nodeLimit = 400000, stockToleranceIn = 0,
+  objective = 'waste', mode = 'reviewed', timeLimitMs = 10000, nodeLimit = 150000, stockToleranceIn = 0,
 } = {}) {
   const t0 = Date.now();
   const kerf = mode === 'nominal' ? 0 : Number(kerfIn) || 0;

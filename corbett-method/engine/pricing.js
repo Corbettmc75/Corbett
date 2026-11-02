@@ -55,6 +55,7 @@ export function priceRows(rows, catalog = []) {
     if (m.unitPriceCents == null) {
       row.unitPriceCents = null; row.extendedCents = null;
       row.supplier = null; row.priceDate = null; row.priceSource = null;
+      if (row.baseQty == null && row.status === 'unresolved') { row.status = 'unresolved'; return row; } // ask about the quantity first
       const qid = `q.price:${row.productKey}`;
       const text = m.reason === 'unit-mismatch'
         ? `Catalog price for ${row.name} is not per ${row.unit} (${m.mismatch.join('; ')}) — add a per-${row.unit} material price.`

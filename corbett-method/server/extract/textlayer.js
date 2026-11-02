@@ -4,7 +4,7 @@
 
 const FT_IN = /(\d{1,3})\s*['’]\s*(\d{1,2}(?:\.\d+)?)\s*(?:"|”|'')/g;            // 7'9.5"  24'4"
 const PAIR = /(\d{1,3}(?:\.\d+)?)\s*['’]?\s*[xX×]\s*(\d{1,3}(?:\.\d+)?)\s*['’]/g;  // 8'x13'
-const FEET = /(?<![\dx×.])(\d{1,3}(?:\.\d+)?)\s*['’](?!\s*\d)/g;                  // 7.5'  12'
+const FEET = /(?<![\dx×.])(\d{1,3}(?:\.\d+)?)\s*['’](?!\s*\d+(?:\.\d+)?\s*(?:"|”|''))/g;                  // 7.5'  12'
 const INCH = /\((\d{1,3}(?:\.\d+)?)\s*(?:"|”)\)/g;                                // (27.5")
 const QTY = /\((\d{1,3})\)\s*(\d{1,2}\s*[xX×]\s*\d{1,2})/g;                       // (5) 2x6
 
@@ -14,7 +14,7 @@ export function parseTextLayer(text) {
   const dims = [], notes = [], exclusions = [];
   let idx = 0;
   for (const raw of lines) {
-    const line = raw.replace(/\s+/g, ' ').trim();
+    const line = raw.replace(/[’‘′]/g, "'").replace(/[“”″]/g, '"').replace(/\s+/g, ' ').trim();
     if (!line) continue;
     const taken = [];
     const mark = (m) => taken.push([m.index, m.index + m[0].length]);
