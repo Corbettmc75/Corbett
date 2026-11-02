@@ -213,6 +213,7 @@ function addComponentSheet() {
 // ================= QUESTIONS =================
 const ANSWER_OPTIONS = {
   'q.corner-rule': [['butt', 'Butt joints (one wall runs through)'], ['interlaced', 'Interlaced — alternate each course'], ['nominal', 'Keep nominal (no deduction)']],
+  'q.interlace-start': [['long', 'Long walls run through on the bottom course'], ['short', 'Short walls run through on the bottom course']],
   'q.slat-spacing': [['on-center', '12" on-center'], ['clear', '12" clear gap']],
   'q.compost-area': [['inside', 'Inside soil area'], ['outside', 'Outside footprint']],
 };
@@ -227,13 +228,29 @@ function questionsTab(id) {
         : h('div', { class: 'card ok' }, 'No open questions.'),
       Object.keys(QTYPE).filter(t => groups[t]).map(t => h('section', null,
         h('h3', { class: 'sechead' }, `${QTYPE[t]} (${groups[t].length})`),
-        groups[t].map(q => questionCard(q, id)))),
+        collapseFamilies(groups[t]).map(g => g.items ? h('details', { class: 'card qfamily' },
+          h('summary', null, h('strong', null, g.title), h('span', { class: 'muted' }, ` (${g.items.length})`)),
+          g.items.map(q => questionCard(q, id))) : questionCard(g, id)))),
       answered.length ? h('section', null, h('h3', { class: 'sechead' }, 'Answered'),
         answered.map(([qid, a]) => h('div', { class: 'card small' },
           h('div', { class: 'row' }, h('span', null, h('strong', null, String(a.value)), a.note ? ` — ${a.note}` : ''),
             canEdit() ? h('button', { class: 'linkbtn', onclick: () => edit(job => { delete job.answers[qid]; }) }, 'Reopen') : null),
           h('div', { class: 'muted' }, `${qid} · ${a.by || ''} ${when(a.at)}`)))) : null);
   }));
+}
+// Families of near-identical questions (one per product / per bed) collapse into one heading.
+const FAMILY_TITLES = { 'q.price': 'Supplier prices needed', 'q.pkg': 'Package sizes needed', 'q.package': 'Products to choose',
+  'q.support-layout': 'Bed support layouts to confirm', 'q.path-outline': 'Path outlines to dimension' };
+function collapseFamilies(qs) {
+  const fam = (q) => q.id.replace(/-L$/, '').split(':')[0];
+  const byFam = new Map();
+  for (const q of qs) { const f = fam(q); if (!byFam.has(f)) byFam.set(f, []); byFam.get(f).push(q); }
+  const out = [];
+  for (const [f, items] of byFam) {
+    if (items.length >= 3) out.push({ title: FAMILY_TITLES[f] || items[0].text.split(':')[0], items });
+    else out.push(...items);
+  }
+  return out;
 }
 function questionCard(q, id) {
   const opts = ANSWER_OPTIONS[q.id];
@@ -247,12 +264,12 @@ function questionCard(q, id) {
     (q.componentIds || []).length ? h('div', { class: 'small muted' }, `Affects: ${q.componentIds.map(compName).join(', ')}`) : null,
     q.type === 'missing_price' ? h('div', { class: 'stack' },
       canEdit() ? h('button', { class: 'btn', onclick: () => catalogEntrySheet({ productKey: (q.productKeys || [])[0] || '' }, () => refreshEstimate(true)) }, 'Add supplier price') : null)
-    : canEdit() ? h('div', { class: 'answer' }, input, note, h('button', { class: 'btn primary', onclick: () => {
+    : canEdit() ? h('details', { class: 'answerwrap' }, h('summary', { class: 'linkbtn' }, 'Answer'), h('div', { class: 'answer' }, input, note, h('button', { class: 'btn primary', onclick: () => {
         let v = input.value.trim(); if (!v) { toast('Enter an answer first.'); return; }
         const asNum = Number(v); const value = v !== '' && !Number.isNaN(asNum) && /^[\d.\s]+$/.test(v) ? asNum : v;
         edit(job => { job.answers = job.answers || {}; job.answers[q.id] = { value, note: note.value.trim(), by: by(), at: new Date().toISOString() }; }, { immediate: true });
         toast('Answer saved — recalculating.');
-      } }, 'Save')) : null);
+      } }, 'Save'))) : null);
 }
 
 // ================= SHOP =================
@@ -280,24 +297,27 @@ function shopTab(id) {
   }));
 }
 function shopCard(r, e, qmap) {
+  // Compact one-line row: product · qty · extended. Everything else is one tap away.
   const audit = (e.audit || []).find(a => (a.rowId || a.productKey) === rowKey(r));
   const pkg = r.packageSize && r.packageSize !== 1 ? ` (${num(r.packageSize)} ${unitLabel(r.packageUnit, r.packageSize)} each)` : '';
-  return h('div', { class: `card shop st-${r.status}`, 'data-row': rowKey(r) },
-    h('div', { class: 'row top' }, h('div', { class: 'pname' }, productLabel(r)),
-      r.provisionalOnly ? h('span', { class: 'chip st-provisional' }, 'Provisional — awaiting answer') : statusChip(r.status)),
-    r.provisionalOnly ? h('div', { class: 'small muted' }, 'Separate from the confirmed boards above — buy only once the question is answered.') : null,
-    h('div', { class: 'qtyline' }, h('span', { class: 'qty' }, qtyText(r)), h('span', { class: 'muted' }, pkg)),
-    r.allowanceQty ? h('div', { class: 'small' }, `Base ${qtyText(r, r.baseQty)} + ${num(r.allowanceQty)} extra allowance`) : null,
-    h('div', { class: 'row small' },
-      h('span', null, r.unitPriceCents == null ? h('span', { class: 'unknown' }, 'Price unknown') : `${money(r.unitPriceCents)} / ${unitLabel(r.packageUnit || r.unit, 1)}`),
-      h('strong', null, r.extendedCents == null ? h('span', { class: 'unknown' }, 'unknown') : money(r.extendedCents))),
-    r.supplier ? h('div', { class: 'small muted' }, `${r.supplier}${r.priceDate ? ` · price sheet ${r.priceDate}` : ''}`) : null,
-    (r.issues || []).map(qid => h('div', { class: 'small warnline' }, qmap[qid]?.text || qid)),
-    audit ? h('details', { class: 'why' }, h('summary', null, 'Why this quantity?'),
-      h('ul', null, (audit.from || []).map(f => h('li', null,
-        f.componentId ? h('strong', null, compName(f.componentId) + ': ') : null,
-        f.formula || f.ref || '', ' ', f.basis ? basisBadge(f.basis) : null,
-        f.boardId ? h('span', { class: 'muted' }, ` [${f.boardId}]`) : null)))) : null);
+  const chip = r.provisionalOnly ? h('span', { class: 'chip st-provisional' }, 'Provisional') : (r.status === 'ok' ? null : statusChip(r.status));
+  return h('details', { class: `shoprow st-${r.status}`, 'data-row': rowKey(r) },
+    h('summary', null,
+      h('span', { class: 'sr-name' }, productLabel(r), chip ? ' ' : null, chip),
+      h('span', { class: 'sr-qty' }, r.totalQty == null ? '—' : qtyText(r)),
+      h('span', { class: 'sr-ext' }, r.extendedCents == null ? h('span', { class: 'unknown' }, '?') : money(r.extendedCents))),
+    h('div', { class: 'sr-body' },
+      r.provisionalOnly ? h('div', { class: 'small muted' }, 'Separate from the confirmed boards — buy only once the question is answered.') : null,
+      h('div', { class: 'small' }, r.allowanceQty ? `Base ${qtyText(r, r.baseQty)} + ${num(r.allowanceQty)} extra allowance` : `Base ${r.baseQty == null ? 'unknown' : qtyText(r, r.baseQty)} · no extra allowance`, pkg),
+      h('div', { class: 'small' }, r.unitPriceCents == null ? h('span', { class: 'unknown' }, 'Price unknown — not counted as $0') : `${money(r.unitPriceCents)} / ${unitLabel(r.packageUnit || r.unit, 1)}`,
+        r.supplier ? h('span', { class: 'muted' }, ` · ${r.supplier}${r.priceDate ? `, price sheet ${r.priceDate}` : ''}`) : null),
+      (r.notes || []).map(n => h('div', { class: 'small muted' }, n)),
+      (r.issues || []).map(qid => h('div', { class: 'small warnline' }, qmap[qid]?.text || qid)),
+      audit ? h('div', { class: 'why' }, h('div', { class: 'small' }, h('strong', null, 'Why this quantity')),
+        h('ul', null, (audit.from || []).map(f => h('li', null,
+          f.componentId ? h('strong', null, compName(f.componentId) + ': ') : null,
+          f.formula || f.ref || (f.cuts ? f.cuts.map(c => `${num(c.lengthIn)}" ${c.label}`).join(' + ') : ''), ' ', f.basis ? basisBadge(f.basis) : null,
+          f.boardId ? h('span', { class: 'muted' }, ` [${f.boardId}]`) : null)))) : null));
 }
 
 // ================= CUTS =================

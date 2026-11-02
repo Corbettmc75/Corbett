@@ -199,3 +199,22 @@ dialog.sheet::backdrop { background: rgba(0,0,0,.45); }
 
 @media print { .topbar, .tabbar, .btn, .linkbtn, #toasts { display: none !important; } .card { box-shadow: none; break-inside: avoid; } }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+
+.qfamily > summary { cursor: pointer; padding: 4px 0; min-height: 44px; display: flex; align-items: center; gap: 6px; }
+.qfamily[open] > summary { margin-bottom: 8px; }
+.qfamily .card { box-shadow: none; }
+
+/* Compact shopping rows */
+.shoprow { background: var(--surface); border: 1px solid var(--line); color: var(--text); border-radius: 12px; margin: 6px 0; }
+.shoprow > summary { list-style: none; display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; padding: 12px 14px; min-height: 48px; cursor: pointer; }
+.shoprow > summary::-webkit-details-marker { display: none; }
+.shoprow .sr-name { font-weight: 600; line-height: 1.25; }
+.shoprow .sr-qty { font-weight: 700; white-space: nowrap; }
+.shoprow .sr-ext { min-width: 4.5em; text-align: right; white-space: nowrap; }
+.shoprow .sr-body { padding: 0 14px 12px; display: grid; gap: 4px; }
+.shoprow.st-unresolved, .shoprow.st-missing_price { border-left: 4px solid var(--warn, #8a5a00); }
+.shoprow.st-provisional { border-left: 4px solid var(--muted); }
+.shoprow .chip { font-size: .75em; padding: 2px 8px; }
+.card.q .qtext { font-weight: 600; }
+.answerwrap > summary { display: inline-flex; align-items: center; min-height: 44px; cursor: pointer; font-weight: 600; }
+.answerwrap[open] > summary { margin-bottom: 6px; }
